@@ -26,3 +26,5 @@ The server is independent of agent-dev-toolkit and other EDA MCP adapters. It us
 A future administrator-provided, local configuration will map opaque project IDs to fixed roots, a trusted vendor executable, immutable approved DO-script paths, allowed output paths and execution limits. MCP inputs may select from this allowlist, but must not supply shell arguments or Tcl/DO text. Canonical paths and symlinks require verification; output workspaces and subprocess trees need resource and timeout enforcement.
 
 Trusted DO scripts themselves remain code execution and must be intentionally reviewed. Compiler, elaborator, simulator and checker verdicts must be independent (#5). Waveforms and native WLF conversion are a separate opt-in stage (#6).
+
+Different editions/versions may use the newer QIS/Qrun path or the legacy vlog/vopt/vsim compatibility flow. The planned runner must require an explicitly validated profile; no implicit flow switching.

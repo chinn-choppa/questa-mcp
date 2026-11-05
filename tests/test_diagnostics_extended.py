@@ -74,6 +74,17 @@ class QuestaDiagnosticsTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 parse_diagnostics_text("hello", tool)
 
+    def test_guard_rejects_pathological_long_lines(self):
+        from questa_mcp.diagnostics import MAX_LINE_CHARS
+        with self.assertRaises(ValueError):
+            parse_diagnostics_text("** Error: " + "x" * MAX_LINE_CHARS)
+        with self.assertRaises(ValueError):
+            parse_diagnostics_text("x" * (MAX_LINE_CHARS + 1))
+
+    def test_unhashable_tool_is_invalid_input(self):
+        with self.assertRaises(ValueError):
+            parse_diagnostics_text("log", ["vsim"])
+
     def test_unicode_text_and_source_line_provenance(self):
         r = parse_diagnostics_text("Header\n** Error: (vlog-123) rtl.sv(9): Ошибка")
         self.assertEqual(r["items"][0]["source_line"], 2)

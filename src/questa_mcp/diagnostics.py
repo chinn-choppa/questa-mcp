@@ -9,6 +9,7 @@ import re
 
 MAX_INPUT_BYTES = 1_048_576
 MAX_ITEMS = 200
+MAX_LINE_CHARS = 8192
 SUPPORTED_TOOLS = frozenset({"vsim", "vlog", "vcom"})
 
 _DIAGNOSTIC = re.compile(
@@ -51,7 +52,7 @@ def parse_diagnostics_text(text: str, tool: str = "vsim", limit: int = 200) -> d
         raise ValueError("text содержит NUL")
     if not isinstance(limit, int) or isinstance(limit, bool) or not 1 <= limit <= MAX_ITEMS:
         raise ValueError("limit должен быть целым числом от 1 до 200")
-    if tool not in SUPPORTED_TOOLS:
+    if not isinstance(tool, str) or tool not in SUPPORTED_TOOLS:
         raise ValueError("Неизвестный EDA-инструмент")
 
     items: list[dict[str, object]] = []
@@ -59,6 +60,8 @@ def parse_diagnostics_text(text: str, tool: str = "vsim", limit: int = 200) -> d
     unrecognized = 0
     failures = 0
     for source_line, raw in enumerate(text.splitlines(), start=1):
+        if len(raw) > MAX_LINE_CHARS:
+            raise ValueError("Длина строки превышает 8192 символов")
         match = _DIAGNOSTIC.match(raw)
         uvm = _UVM.match(raw) if match is None else None
         if match is None and uvm is None:
