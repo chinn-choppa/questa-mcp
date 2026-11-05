@@ -1,7 +1,7 @@
 """Модель свидетельств верификации: процесс != пройденный тест.
 
-Данные MCP-запроса недоверенные. Только внутренний коллектор может выставить
-attested=True после подтверждённого локального выполнения.
+Данные MCP-запроса недоверенные. Подтверждённого локального коллектора
+пока нет, поэтому ни один публичный или внутренний анализатор не выдаёт PASS.
 """
 
 from __future__ import annotations
@@ -149,8 +149,8 @@ def _checker_result(value: object) -> dict[str, object]:
     return {"state": state, "checks_run": checks, "failures": failures, "evidence": evidence}
 
 
-def assess_run(record: object, *, attested: bool = False) -> dict[str, object]:
-    """Оценить фазовую картину; клиент MCP никогда не может указать attested."""
+def assess_run(record: object) -> dict[str, object]:
+    """Оценить фазовую картину без выдуманного подтверждения успешного EDA."""
     _bounded_request(record)
     if not isinstance(record, dict):
         raise ValueError("INVALID_RECORD")
@@ -188,17 +188,12 @@ def assess_run(record: object, *, attested: bool = False) -> dict[str, object]:
     checker_positive = checker["state"] == "REPORTED_COMPLETE"
     if failures:
         verdict, reason = "FAIL", f"FAILURE_IN_{failures[0].upper()}"
-    elif all_completed and checker_positive and attested and version and platform and artifacts:
-        verdict, reason = "PASS", "ATTESTED_CHECKER_COMPLETED"
-    elif all_completed and checker_positive and attested:
-        verdict, reason = "UNKNOWN", "INSUFFICIENT_PROVENANCE"
     elif not any(phase["state"] != "NOT_RUN" for phase in phases.values()) and checker["state"] == "NOT_RUN":
         verdict, reason = "NOT_RUN", "NO_EXECUTION_EVIDENCE"
+    elif all_completed and checker_positive:
+        verdict, reason = "UNKNOWN", "UNVERIFIED_POSITIVE_EVIDENCE"
     else:
-        verdict, reason = "UNKNOWN", (
-            "UNVERIFIED_POSITIVE_EVIDENCE" if all_completed and checker_positive and not attested
-            else "INCOMPLETE_OR_MISSING_CHECKER"
-        )
+        verdict, reason = "UNKNOWN", "INCOMPLETE_OR_MISSING_CHECKER"
     return {
         "test_id": test_id, "seed": seed,
         "tool": tool, "tool_version": version, "os": platform,
@@ -206,17 +201,18 @@ def assess_run(record: object, *, attested: bool = False) -> dict[str, object]:
         "phases": phases, "checker": checker,
         "test_verdict": verdict, "reason": reason,
         "failure_source": failures[0] if failures else None,
-        "provenance": "ATTESTED_INTERNAL" if attested else "CALLER_SUPPLIED_UNVERIFIED",
+        "provenance": "CALLER_SUPPLIED_UNVERIFIED",
         "reported_checker_pass": checker_positive,
+        "reported_pass_candidate": all_completed and checker_positive,
     }
 
 
-def assess_regression(records: object, *, attested: bool = False) -> dict[str, object]:
+def assess_regression(records: object) -> dict[str, object]:
     """Сводка тестов с независимыми verdict; непроверенные PASS не повышаются."""
     _bounded_request(records)
     if not isinstance(records, list) or len(records) > MAX_RUNS:
         raise ValueError("INVALID_REGRESSION_SIZE")
-    runs = [assess_run(record, attested=attested) for record in records]
+    runs = [assess_run(record) for record in records]
     keys = [(r["test_id"], r["seed"]) for r in runs]
     if len(set(keys)) != len(keys):
         raise ValueError("DUPLICATE_TEST_AND_SEED")
@@ -227,11 +223,10 @@ def assess_regression(records: object, *, attested: bool = False) -> dict[str, o
         verdict = "FAIL"
     elif not runs or summary["NOT_RUN"] == len(runs):
         verdict = "NOT_RUN"
-    elif summary["PASS"] == len(runs):
-        verdict = "PASS"
     else:
         verdict = "UNKNOWN"
     return {
         "regression_verdict": verdict, "test_count": len(runs), "counts": summary,
-        "runs": runs, "provenance": "ATTESTED_INTERNAL" if attested else "CALLER_SUPPLIED_UNVERIFIED",
+        "runs": runs, "reported_pass_candidates": sum(bool(r["reported_pass_candidate"]) for r in runs),
+        "provenance": "CALLER_SUPPLIED_UNVERIFIED",
     }

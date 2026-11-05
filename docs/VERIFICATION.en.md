@@ -16,12 +16,12 @@ The checker has `executed`, `completed`, `checks_run`, `failures`, `success_evid
 
 MCP tools `assess_verification_run(record)` and `assess_regression(runs)` receive **caller-controlled** data. A reported positive result stays `UNKNOWN` and tagged `CALLER_SUPPLIED_UNVERIFIED` even with all zero exit codes and a positive checker marker. Recognized negative errors/fatals are `FAIL` with line evidence, but do not prove the commercial EDA was actually invoked.
 
-The internal Python-only `attested=True` switch tests the `PASS` transition with **synthetic fixtures only**; it is unavailable to MCP clients. Actual PASS requires a future authenticated local collector with verified artifact provenance. The current approved DO runner (#4) does not yet certify any individual phase.
+No internal `attested=True` shortcut is provided. Synthetic positive scenarios are explicitly marked `reported_pass_candidate=true` and keep the verdict `UNKNOWN`. A real PASS requires a future authenticated local collector with verified artifact provenance. The current approved DO runner (#4) does not yet certify any individual phase.
 
 ## Regression
 
-Up to 32 records, unique (`test_id`, `seed`) pairs, per-test evidence and `PASS/FAIL/UNKNOWN/NOT_RUN` counts. A negative indication yields `FAIL`; full regression `PASS` requires **all** reports to be trusted and positively checked. Otherwise `UNKNOWN` or `NOT_RUN`.
+Up to 32 records, unique (`test_id`, `seed`) pairs, per-test evidence and `PASS/FAIL/UNKNOWN/NOT_RUN` counts. A negative indication yields `FAIL`; positive caller reports remain `UNKNOWN` until a future trusted collector is implemented. Empty data returns `NOT_RUN`.
 
 Total request limit is 1 MiB. Names, hashes and versions supplied by the caller are **not validated local artifact provenance**. Never send private transcripts or credentials.
 
-Even the internal synthetic PASS transition requires non-empty tool version, OS and artifact hash metadata; missing provenance yields `UNKNOWN`.
+No synthetic test is allowed to claim a real PASS, regardless of metadata provided by the caller.

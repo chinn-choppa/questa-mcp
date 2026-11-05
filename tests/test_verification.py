@@ -1,4 +1,4 @@
-"""Пофазные результаты: PASS только от внутреннего аттестованного коллектора."""
+"""Пофазные результаты: ни один неподтверждённый отчёт не даёт PASS."""
 
 from __future__ import annotations
 
@@ -33,23 +33,24 @@ class PhaseModelTests(unittest.TestCase):
         self.assertEqual(got["provenance"], "CALLER_SUPPLIED_UNVERIFIED")
         self.assertEqual(got["phases"]["simulation"]["state"], "COMPLETED")
 
-    def test_internal_mock_attestation_models_true_pass(self):
-        got = assess_run(self.passing, attested=True)
-        self.assertEqual(got["test_verdict"], "PASS")
-        self.assertEqual(got["reason"], "ATTESTED_CHECKER_COMPLETED")
+    def test_positive_mock_is_only_a_reported_candidate(self):
+        got = assess_run(self.passing)
+        self.assertEqual(got["test_verdict"], "UNKNOWN")
+        self.assertTrue(got["reported_pass_candidate"])
+        self.assertEqual(got["reason"], "UNVERIFIED_POSITIVE_EVIDENCE")
 
     def test_positive_evidence_without_provenance_remains_unknown(self):
         report = copy.deepcopy(self.passing)
         report["tool_version"] = ""
         report["artifacts"] = {}
-        got = assess_run(report, attested=True)
+        got = assess_run(report)
         self.assertEqual(got["test_verdict"], "UNKNOWN")
-        self.assertEqual(got["reason"], "INSUFFICIENT_PROVENANCE")
+        self.assertEqual(got["reason"], "UNVERIFIED_POSITIVE_EVIDENCE")
 
     def test_exit_zero_without_checker_is_unknown(self):
         report = copy.deepcopy(self.passing)
         report.pop("checker")
-        got = assess_run(report, attested=True)
+        got = assess_run(report)
         self.assertEqual(got["test_verdict"], "UNKNOWN")
         self.assertFalse(got["reported_checker_pass"])
 
@@ -57,7 +58,7 @@ class PhaseModelTests(unittest.TestCase):
         report = copy.deepcopy(self.passing)
         report["checker"]["checks_run"] = 0
         report["checker"].pop("success_evidence")
-        self.assertEqual(assess_run(report, attested=True)["test_verdict"], "UNKNOWN")
+        self.assertEqual(assess_run(report)["test_verdict"], "UNKNOWN")
 
     def test_compile_error_has_exact_failing_line(self):
         report = copy.deepcopy(self.passing)
@@ -86,13 +87,13 @@ class PhaseModelTests(unittest.TestCase):
         self.assertEqual(assess_run(report)["test_verdict"], "FAIL")
         self.assertEqual(assess_run(report)["failure_source"], "checker")
         report["checker"].pop("failure_evidence")
-        self.assertEqual(assess_run(report, attested=True)["test_verdict"], "UNKNOWN")
+        self.assertEqual(assess_run(report)["test_verdict"], "UNKNOWN")
 
     def test_timeout_cancellation_are_unknown_not_pass(self):
         for state in ("timed_out", "cancelled"):
             report = copy.deepcopy(self.passing)
             report["phases"]["simulation"].update({"completed": False, "exit_code": None, state: True})
-            result = assess_run(report, attested=True)
+            result = assess_run(report)
             self.assertEqual(result["test_verdict"], "UNKNOWN")
             self.assertEqual(result["phases"]["simulation"]["state"],
                              "TIMEOUT" if state == "timed_out" else "CANCELLED")
@@ -105,7 +106,7 @@ class PhaseModelTests(unittest.TestCase):
         self.assertEqual(result["test_verdict"], "NOT_RUN")
         self.assertEqual(result["phases"]["compile"]["state"], "NOT_RUN")
 
-    def test_regression_aggregates_fail_unknown_and_attested_pass(self):
+    def test_regression_aggregates_failure_and_unverified_success(self):
         good = copy.deepcopy(self.passing)
         bad = copy.deepcopy(self.passing)
         bad["seed"] = 43
@@ -116,8 +117,9 @@ class PhaseModelTests(unittest.TestCase):
         self.assertEqual(got["counts"]["UNKNOWN"], 1)
         got = assess_regression([good])
         self.assertEqual(got["regression_verdict"], "UNKNOWN")
-        got = assess_regression([good], attested=True)
-        self.assertEqual(got["regression_verdict"], "PASS")
+        got = assess_regression([good])
+        self.assertEqual(got["regression_verdict"], "UNKNOWN")
+        self.assertEqual(got["reported_pass_candidates"], 1)
         self.assertEqual(assess_regression([])["regression_verdict"], "NOT_RUN")
 
     def test_duplicate_test_seed_and_invalid_artifact_denied(self):
@@ -143,7 +145,7 @@ class PhaseModelTests(unittest.TestCase):
     def test_missing_checker_proof_does_not_create_pass(self):
         report = copy.deepcopy(self.passing)
         report["checker"].pop("success_evidence")
-        self.assertEqual(assess_run(report, attested=True)["test_verdict"], "UNKNOWN")
+        self.assertEqual(assess_run(report)["test_verdict"], "UNKNOWN")
 
 
 if __name__ == "__main__":
