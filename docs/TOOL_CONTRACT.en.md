@@ -27,3 +27,5 @@ A recognized error/fatal/UVM_ERROR/UVM_FATAL establishes a failure indication, b
 A separate approved-project API must enforce allowlists, fixed executables, existing DO scripts and bounded workspace. Do not add `command`, unrestricted Tcl, arbitrary shell or network execution.
 
 For regex resource safety, any single log line longer than **8192 characters** is rejected. Invalid types generate tool errors, not UNKNOWN/PASS.
+
+Questa/ModelSim `** Error (suppressible):` and `** Warning (suppressible):` are recognized; each diagnostic includes `qualifier="suppressible"` or `null`. Suppressible **errors remain failures**, not successful checks.
