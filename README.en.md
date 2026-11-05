@@ -1,14 +1,14 @@
 # questa-mcp
 
-[Русский](README.md) · [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md)
+[Русский](README.md) · [Contributing](CONTRIBUTING.en.md) · [Security](SECURITY.en.md)
 
-Community-focused, local-first MCP adapter for **Siemens Questa / ModelSim**. This is an independently maintained open-source project, not an official vendor product.
+An independent, local-first MCP adapter for Siemens Questa/ModelSim. Not affiliated with Siemens.
 
-**Status: experimental bootstrap (0.0.1).** The initial release exposes a minimal MCP server, installation detection and bounded diagnostic parsing. It does **not** execute synthesis, simulation, hardware programming or arbitrary shell commands.
+**Status: experimental diagnostic foundation (0.0.1).** Real MCP protocol tests and bounded Questa/ModelSim transcript parsing are implemented. **No EDA process is executed** in this release. A returned zero error count is not a passing test.
 
-## Setup
+## Install
 
-Python 3.11+ and `uv` are required:
+Requires Python 3.11+ and [uv](https://docs.astral.sh/uv/). Tested in public CI with Python 3.11 and 3.13 on Ubuntu and Windows, with official MCP SDK 2.3.0. Python 3.15 and vendor-specific tool compatibility remain **NOT_RUN**.
 
 ```bash
 git clone https://github.com/chinn-choppa/questa-mcp.git
@@ -17,15 +17,41 @@ uv sync
 uv run questa-mcp
 ```
 
-MCP tools: `server_info`, `tool_status`, `parse_diagnostics`. Use a local stdio-capable MCP client and configure it to launch the installed command. A real MCP client test is separate from Python unit tests.
+For clients using an `mcpServers` entry (other hosts have different configuration formats):
 
-## Development
-
-```bash
-python -m unittest discover -s tests -v
-python -m compileall -q src tests
+```json
+{
+  "mcpServers": {
+    "questa-mcp": {
+      "command": "uv",
+      "args": ["--directory", "/absolute/path/to/questa-mcp", "run", "questa-mcp"]
+    }
+  }
+}
 ```
 
-Review [architecture](docs/ARCHITECTURE.md), [roadmap](docs/ROADMAP.md) and [security](SECURITY.md). Russian is used for most engineering documentation; international contributions are welcome, including improvements to English documentation.
+The server communicates over local `stdio` and does not start a network listener.
 
-Licensed under Apache-2.0. No proprietary EDA executables, licenses or private project data are distributed here.
+## Available tools
+
+| Tool | Result | Execution |
+| --- | --- | --- |
+| `server_info()` | Capabilities and version | No EDA |
+| `tool_status()` | Detect `vsim` without disclosing a path | No EDA |
+| `parse_diagnostics(text, tool="vsim", limit=200)` | Structured `vsim`, `vlog`, `vcom`, UVM messages and evidence | No EDA |
+
+Parsing accepts up to 1 MiB of text and returns at most 200 records. Entries include severity, message code, emitting tool, source file and line where present, simulation time, original transcript line and its position. `test_verdict` is **FAIL** when recognized error/fatal evidence exists, otherwise **UNKNOWN**. Neither compilation nor actual simulation is performed by the parser. It never reports PASS.
+
+## Verification
+
+```bash
+uv sync
+uv run python -m unittest discover -s tests -v
+uv run python -m compileall -q src tests
+```
+
+CI includes real in-process and subprocess `stdio` MCP `tools/list` and `tools/call`, invalid request tests, and synthetic transcripts. Commercial EDA verification is separate and **NOT_RUN**.
+
+See [architecture](docs/ARCHITECTURE.en.md), [tool contract](docs/TOOL_CONTRACT.en.md), [testing](docs/TESTING.en.md), [compatibility](docs/COMPATIBILITY.en.md), and [roadmap](docs/ROADMAP.en.md).
+
+Licensed under Apache-2.0; Siemens binaries, licenses and proprietary examples are not distributed.
