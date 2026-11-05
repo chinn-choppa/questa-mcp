@@ -84,9 +84,9 @@ class ApprovedProjectsTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result["test_verdict"], "UNKNOWN")
         self.assertEqual(result["diagnostics"], [])
         args, kwargs = spawn.call_args
-        self.assertEqual(args[:3], (str(self.executable), "-c", "-do"))
-        self.assertEqual(args[3], str(self.script))
-        self.assertEqual(kwargs["cwd"], str(self.root))
+        self.assertEqual(args[:3], (str(self.executable.resolve()), "-c", "-do"))
+        self.assertEqual(args[3], str(self.script.resolve()))
+        self.assertEqual(kwargs["cwd"], str(self.root.resolve()))
         self.assertNotIn("shell", kwargs)
 
     async def test_fatal_failure_and_license_evidence(self):

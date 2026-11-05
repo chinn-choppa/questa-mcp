@@ -151,7 +151,10 @@ async def _kill_tree(proc: asyncio.subprocess.Process) -> None:
         except ProcessLookupError:
             pass
     if proc.returncode is None:
-        proc.kill()
+        try:
+            proc.kill()
+        except ProcessLookupError:
+            pass
     try:
         await asyncio.wait_for(proc.wait(), timeout=5)
     except asyncio.TimeoutError:
