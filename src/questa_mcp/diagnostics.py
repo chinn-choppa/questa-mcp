@@ -13,7 +13,8 @@ MAX_LINE_CHARS = 8192
 SUPPORTED_TOOLS = frozenset({"vsim", "vlog", "vcom"})
 
 _DIAGNOSTIC = re.compile(
-    r"^\s*(?:#\s*)?\*\*\s*(?P<level>Note|Info|Warning|Error|Fatal|Failure)\s*:"
+    r"^\s*(?:#\s*)?\*\*\s*(?P<level>Note|Info|Warning|Error|Fatal|Failure)"
+    r"(?:\s*\((?P<qualifier>suppressible)\))?\s*:"
     r"\s*(?P<body>.*)$",
     re.IGNORECASE,
 )
@@ -121,6 +122,7 @@ def parse_diagnostics_text(text: str, tool: str = "vsim", limit: int = 200) -> d
             "raw": raw,
             "format": "uvm" if uvm else "questa_message",
             "confidence": "HIGH",
+            "qualifier": groups.get("qualifier"),
         })
 
     return {
