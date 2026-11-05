@@ -1,0 +1,4 @@
+# vsim work.tb -c
+# Loading work.tb
+# TEST PASSED
+# quit -f
