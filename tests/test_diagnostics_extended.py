@@ -85,6 +85,20 @@ class QuestaDiagnosticsTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             parse_diagnostics_text("log", ["vsim"])
 
+
+    def test_suppressible_vendor_diagnostic(self):
+        sample = (
+            "# ** Error (suppressible): (vsim-FLI-3155) The FLI is not enabled\n"
+            "** Warning (suppressible): (vlog-2240) port mismatch"
+        )
+        parsed = parse_diagnostics_text(sample, "vsim")
+        self.assertEqual(parsed["count"], 2)
+        self.assertEqual([x["severity"] for x in parsed["items"]], ["error", "warning"])
+        self.assertEqual(parsed["items"][0]["code"], "vsim-FLI-3155")
+        self.assertEqual(parsed["items"][0]["qualifier"], "suppressible")
+        self.assertEqual(parsed["test_verdict"], "FAIL")
+        self.assertIn("(suppressible)", parsed["items"][0]["raw"])
+
     def test_unicode_text_and_source_line_provenance(self):
         r = parse_diagnostics_text("Header\n** Error: (vlog-123) rtl.sv(9): Ошибка")
         self.assertEqual(r["items"][0]["source_line"], 2)
