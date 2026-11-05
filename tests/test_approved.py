@@ -176,7 +176,7 @@ class ApprovedProjectsTests(unittest.IsolatedAsyncioTestCase):
     async def test_snapshot_stays_identical_when_source_changes_after_validation(self):
         async def spawn(*args, **kwargs):
             staged = Path(args[3])
-            self.assertEqual(staged.read_bytes(), b"run -all\nquit -f\n")
+            self.assertEqual(staged.read_bytes(), self.script.read_bytes())
             # Команда получает защищённый снимок, а не исходный DO.
             self.script.write_text("dangerous change\n", encoding="utf-8")
             self.assertNotEqual(staged, self.script)
