@@ -85,7 +85,7 @@ class ApprovedProjectsTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result["diagnostics"], [])
         args, kwargs = spawn.call_args
         self.assertEqual(args[:3], (str(self.executable.resolve()), "-c", "-do"))
-        self.assertEqual(args[3], str(self.script.resolve()))
+        self.assertEqual(Path(args[3]).name, "approved.do")
         self.assertEqual(kwargs["cwd"], str(self.root.resolve()))
         self.assertNotIn("shell", kwargs)
 
@@ -172,6 +172,60 @@ class ApprovedProjectsTests(unittest.IsolatedAsyncioTestCase):
             status, _, _ = await _execute(profile)
             kill.assert_awaited_once()
         self.assertEqual(status, "TIMEOUT")
+
+    async def test_snapshot_stays_identical_when_source_changes_after_validation(self):
+        async def spawn(*args, **kwargs):
+            staged = Path(args[3])
+            self.assertEqual(staged.read_bytes(), b"run -all\nquit -f\n")
+            # Команда получает защищённый снимок, а не исходный DO.
+            self.script.write_text("dangerous change\n", encoding="utf-8")
+            self.assertNotEqual(staged, self.script)
+            return FakeProcess(b"")
+        with patch("questa_mcp.approved.asyncio.create_subprocess_exec", side_effect=spawn):
+            result = await run_approved_project("smoke")
+        self.assertEqual(result["status"], "COMPLETED_UNVERIFIED")
+
+    async def test_unconfirmed_process_tree_termination_is_not_timeout_success(self):
+        self.profile["max_output_bytes"] = 1024
+        self.write_config()
+        with patch("questa_mcp.approved.asyncio.create_subprocess_exec", new_callable=AsyncMock) as spawn, patch(
+            "questa_mcp.approved._kill_tree", new_callable=AsyncMock, return_value=False
+        ):
+            spawn.return_value = FakeProcess(b"x" * 2048)
+            result = await run_approved_project("smoke")
+        self.assertEqual(result["status"], "TERMINATION_UNCONFIRMED")
+        self.assertFalse(result["log_complete"])
+
+    async def test_symlink_replacement_during_open_never_executes(self):
+        original = self.script
+        replacement = self.root / "evil.do"
+        replacement.write_text("puts BOGUS\n", encoding="utf-8")
+        original.unlink()
+        try:
+            original.symlink_to(replacement)
+        except (OSError, NotImplementedError):
+            self.skipTest("OS forbids symlink creation")
+        with patch("questa_mcp.approved.asyncio.create_subprocess_exec", new_callable=AsyncMock) as spawn:
+            result = await run_approved_project("smoke")
+            self.assertIn(result["status"], {"INVALID_CONFIGURATION", "INVALID_SCRIPT"})
+            spawn.assert_not_called()
+
+    async def test_cancellation_destroys_process_group(self):
+        class Hanging:
+            async def read(self, _):
+                await asyncio.Event().wait()
+        fake = FakeProcess(b"")
+        fake.stdout = Hanging()
+        with patch("questa_mcp.approved.asyncio.create_subprocess_exec", new_callable=AsyncMock) as spawn, patch(
+            "questa_mcp.approved._kill_tree", new_callable=AsyncMock, return_value=True
+        ) as kill:
+            spawn.return_value = fake
+            task = asyncio.create_task(run_approved_project("smoke"))
+            await asyncio.sleep(0.01)
+            task.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                await task
+            kill.assert_awaited_once()
 
 
 if __name__ == "__main__":

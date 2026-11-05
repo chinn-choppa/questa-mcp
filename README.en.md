@@ -58,4 +58,4 @@ Licensed under Apache-2.0; Siemens binaries, licenses and proprietary examples a
 
 ## Experimental approved runner (#4)
 
-A human operator can opt in to the **allowlisted** `list_approved_projects` and `run_approved_project(project_id)` tools. Only pre-approved, SHA-256 checked existing DO files are allowed; no MCP-supplied Tcl or paths. Details and trust limitations: [approved-project runner](docs/APPROVED_PROJECTS.en.md). All real licensed EDA results remain **NOT_RUN**. A zero exit code is reported as `COMPLETED_UNVERIFIED`, never PASS.
+A human operator can opt in to a SHA-256 checked private DO snapshot and the **allowlisted** `list_approved_projects` and `run_approved_project(project_id)` tools. Only pre-approved, SHA-256 checked existing DO files are allowed; no MCP-supplied Tcl or paths. Details and trust limitations: [approved-project runner](docs/APPROVED_PROJECTS.en.md). All real licensed EDA results remain **NOT_RUN**. A zero exit code is reported as `COMPLETED_UNVERIFIED`, never PASS.

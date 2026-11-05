@@ -9,6 +9,7 @@ import os
 import re
 import signal
 import subprocess
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -129,11 +130,29 @@ def list_approved_projects() -> dict[str, object]:
     }
 
 
-async def _kill_tree(proc: asyncio.subprocess.Process) -> None:
+def _verified_do_bytes(profile: ApprovedProject) -> bytes:
+    """Прочитать фиксированную версию DO и сверить хеш до передачи симулятору."""
+    flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
+    descriptor = os.open(profile.script, flags)
+    with os.fdopen(descriptor, "rb") as source:
+        if not source.seekable():
+            raise ValueError("INVALID_SCRIPT")
+        if not profile.script.resolve(strict=True).is_relative_to(profile.workspace):
+            raise ValueError("INVALID_SCRIPT")
+        contents = source.read(MAX_DO_BYTES + 1)
+    if len(contents) > MAX_DO_BYTES:
+        raise ValueError("SCRIPT_TOO_LARGE")
+    if hashlib.sha256(contents).hexdigest() != profile.script_sha256:
+        raise ValueError("DO_HASH_MISMATCH")
+    return contents
+
+
+async def _kill_tree(proc: asyncio.subprocess.Process) -> bool:
+    """Вернуть true, только если остановка дерева подтверждена доступным механизмом."""
     if proc.returncode is not None:
-        return
+        return False
+    tree_signalled = False
     if os.name == "nt":
-        # Windows не поддерживает os.killpg: используем фиксированный системный taskkill.
         winroot = os.environ.get("SystemRoot", r"C:\Windows")
         taskkill = Path(winroot) / "System32" / "taskkill.exe"
         if taskkill.is_file():
@@ -142,14 +161,15 @@ async def _kill_tree(proc: asyncio.subprocess.Process) -> None:
                     str(taskkill), "/PID", str(proc.pid), "/T", "/F",
                     stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL,
                 )
-                await asyncio.wait_for(killer.wait(), timeout=5)
+                tree_signalled = await asyncio.wait_for(killer.wait(), timeout=5) == 0
             except (OSError, asyncio.TimeoutError):
-                pass
+                tree_signalled = False
     else:
         try:
             os.killpg(proc.pid, signal.SIGKILL)
-        except ProcessLookupError:
-            pass
+            tree_signalled = True
+        except (ProcessLookupError, PermissionError):
+            tree_signalled = False
     if proc.returncode is None:
         try:
             proc.kill()
@@ -158,48 +178,66 @@ async def _kill_tree(proc: asyncio.subprocess.Process) -> None:
     try:
         await asyncio.wait_for(proc.wait(), timeout=5)
     except asyncio.TimeoutError:
-        pass
+        return False
+    return tree_signalled and proc.returncode is not None
 
 
 async def _execute(profile: ApprovedProject) -> tuple[str, int | None, bytes]:
-    kwargs: dict[str, object] = (
-        {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP}
-        if os.name == "nt" else {"start_new_session": True}
-    )
+    """Снимать снимок DO в приватную папку, не передавать изменяемый исходник."""
     try:
-        proc = await asyncio.create_subprocess_exec(
-            str(profile.executable), "-c", "-do", str(profile.script),
-            cwd=str(profile.workspace),
-            stdin=asyncio.subprocess.DEVNULL,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.STDOUT,
-            **kwargs,
-        )
+        snapshot = _verified_do_bytes(profile)
+    except ValueError as exc:
+        return str(exc), None, b""
     except OSError:
-        return "TOOL_UNAVAILABLE", None, b""
+        return "INVALID_SCRIPT", None, b""
 
-    data = bytearray()
-    try:
-        async with asyncio.timeout(profile.timeout_seconds):
-            assert proc.stdout is not None
-            while chunk := await proc.stdout.read(4096):
-                if len(data) + len(chunk) > profile.max_output_bytes:
-                    data.extend(chunk[: max(0, profile.max_output_bytes - len(data))])
-                    await _kill_tree(proc)
-                    return "OUTPUT_LIMIT", proc.returncode, bytes(data)
-                data.extend(chunk)
-            result = await proc.wait()
-            return ("COMPLETED_UNVERIFIED" if result == 0 else "PROCESS_FAILED",
-                    result, bytes(data))
-    except TimeoutError:
-        await _kill_tree(proc)
-        return "TIMEOUT", proc.returncode, bytes(data)
-    except asyncio.CancelledError:
-        await _kill_tree(proc)
-        raise
-    except BaseException:
-        await _kill_tree(proc)
-        raise
+    # Временный каталог вне недоверенного workspace, с ограниченными правами.
+    with tempfile.TemporaryDirectory(prefix="questa-mcp-do-") as temporary:
+        staged = Path(temporary) / "approved.do"
+        with staged.open("xb") as handle:
+            handle.write(snapshot)
+        if os.name != "nt":
+            staged.chmod(0o400)
+        kwargs: dict[str, object] = (
+            {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP}
+            if os.name == "nt" else {"start_new_session": True}
+        )
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                str(profile.executable), "-c", "-do", str(staged),
+                cwd=str(profile.workspace),
+                stdin=asyncio.subprocess.DEVNULL,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT,
+                **kwargs,
+            )
+        except OSError:
+            return "TOOL_UNAVAILABLE", None, b""
+
+        data = bytearray()
+        try:
+            async with asyncio.timeout(profile.timeout_seconds):
+                assert proc.stdout is not None
+                while chunk := await proc.stdout.read(4096):
+                    if len(data) + len(chunk) > profile.max_output_bytes:
+                        data.extend(chunk[: max(0, profile.max_output_bytes - len(data))])
+                        confirmed = await _kill_tree(proc)
+                        state = "OUTPUT_LIMIT" if confirmed else "TERMINATION_UNCONFIRMED"
+                        return state, proc.returncode, bytes(data)
+                    data.extend(chunk)
+                result = await proc.wait()
+                return ("COMPLETED_UNVERIFIED" if result == 0 else "PROCESS_FAILED",
+                        result, bytes(data))
+        except TimeoutError:
+            confirmed = await _kill_tree(proc)
+            return ("TIMEOUT" if confirmed else "TERMINATION_UNCONFIRMED",
+                    proc.returncode, bytes(data))
+        except asyncio.CancelledError:
+            await asyncio.shield(_kill_tree(proc))
+            raise
+        except BaseException:
+            await asyncio.shield(_kill_tree(proc))
+            raise
 
 
 async def run_approved_project(project_id: str) -> dict[str, object]:
@@ -213,8 +251,6 @@ async def run_approved_project(project_id: str) -> dict[str, object]:
         profile = profiles.get(project_id)
         if profile is None:
             return {"status": "DENIED", "test_verdict": "UNKNOWN", "eda_executed": False}
-        if hashlib.sha256(profile.script.read_bytes()).hexdigest() != profile.script_sha256:
-            return {"status": "DO_HASH_MISMATCH", "test_verdict": "UNKNOWN", "eda_executed": False}
     except (OSError, ValueError, json.JSONDecodeError):
         return {"status": "INVALID_CONFIGURATION", "test_verdict": "UNKNOWN", "eda_executed": False}
 
@@ -223,13 +259,14 @@ async def run_approved_project(project_id: str) -> dict[str, object]:
         parsed = parse_diagnostics_text(log.decode("utf-8", errors="replace"))
     except ValueError:
         parsed = {"test_verdict": "UNKNOWN", "count": 0, "items": []}
-    if _LICENSE.search(log.decode("utf-8", errors="replace")):
+    if status in {"PROCESS_FAILED", "COMPLETED_UNVERIFIED"} and _LICENSE.search(log.decode("utf-8", errors="replace")):
         status = "LICENSE_ERROR_EVIDENCE"
     disclosed = parsed["items"][:20] if profile.expose_diagnostics else []
+    started = status not in {"TOOL_UNAVAILABLE", "DO_HASH_MISMATCH", "SCRIPT_TOO_LARGE", "INVALID_SCRIPT"}
     return {
         "status": status,
         "exit_code": code,
-        "eda_executed": status not in {"TOOL_UNAVAILABLE"},
+        "eda_executed": started,
         "test_verdict": parsed["test_verdict"],
         "compile_status": "UNKNOWN",
         "elaboration_status": "UNKNOWN",
@@ -239,5 +276,5 @@ async def run_approved_project(project_id: str) -> dict[str, object]:
         "diagnostics_disclosed": profile.expose_diagnostics,
         "captured_log_sha256": hashlib.sha256(log).hexdigest(),
         "captured_bytes": len(log),
-        "log_complete": status not in {"TIMEOUT", "OUTPUT_LIMIT"},
+        "log_complete": status not in {"TIMEOUT", "OUTPUT_LIMIT", "TERMINATION_UNCONFIRMED"},
     }

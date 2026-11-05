@@ -38,3 +38,5 @@
 ## Контракт исполнителя разрешённых профилей (#4)
 
 `list_approved_projects()` показывает только IDs или `NOT_CONFIGURED`/`INVALID_CONFIGURATION`. `run_approved_project(project_id: str)` возвращает `status`, `exit_code`, `eda_executed`, `test_verdict=FAIL|UNKNOWN`, пофазные `UNKNOWN`, число диагностик, необязательные явно разрешённые строки, размер и SHA-256 захваченного вывода, полноту журнала. Никаких Tcl/DO или путей от MCP; см. [конфигурацию](APPROVED_PROJECTS.md). Код 0 не становится PASS.
+
+Исполнитель использует зафиксированный временный снимок DO, а не исходный файл после проверки SHA-256. `TERMINATION_UNCONFIRMED` — остановка дерева процессов не подтверждена; повторный запуск без осмотра запрещён. `DO_HASH_MISMATCH` и `INVALID_SCRIPT` не запускают EDA и имеют `eda_executed=false`.

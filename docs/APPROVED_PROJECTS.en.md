@@ -42,3 +42,7 @@ The hash shown is not valid for your actual script. Compute and enter the SHA-25
 - Compile, elaboration and simulation phase verdicts remain `UNKNOWN` until #5 supplies authoritative evidence.
 
 Windows and Linux public CI use mock subprocesses. Real licensed Questa/ModelSim operation, vendor editions, and actual OS process-tree termination remain **NOT_RUN**.
+
+## Execution-time script snapshot
+
+The server reads a size-bounded DO file, checks the operator-approved SHA-256, and creates a private temporary snapshot outside the workspace. `vsim -do` receives the snapshot path, which is deleted after execution. This closes the gap between hashing and the simulator reopening the original DO, but **does not provide isolation** against an attacker with the same OS permissions, unsafe `source` commands or modifications of dependent files. On supported POSIX systems the final file read uses `O_NOFOLLOW`. If process-tree shutdown cannot be confirmed, the status is `TERMINATION_UNCONFIRMED`; descendants may survive, particularly on Windows. A real-Questa acceptance run in an OS sandbox remains mandatory.
