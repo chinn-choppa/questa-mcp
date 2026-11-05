@@ -8,7 +8,7 @@ Do not publish working exploits, tokens, private RTL or licensed data in public 
 
 ## Threat model
 
-MCP inputs are untrusted, even when the transport is local. The current tools only inspect simulator availability and parse caller-supplied bounded text. There are **no vendor process launches, project file reads, network listeners, or automatic uploads**.
+MCP inputs are untrusted, even when the transport is local. By default tools only discover an installed simulator, parse bounded caller-supplied text, and analyze phase reports. An **explicit operator-approved profile** additionally enables local vsim execution of a pre-approved DO snapshot. There are no network listeners or automatic uploads. The server reads the approved DO, not RTL project source files.
 
 - Tool discovery does not reveal the local executable path, license variables or environment.
 - Parsing does not open filenames appearing in the transcript. Input is capped at 1 MiB; output at 200 diagnostics.
