@@ -188,8 +188,10 @@ def assess_run(record: object, *, attested: bool = False) -> dict[str, object]:
     checker_positive = checker["state"] == "REPORTED_COMPLETE"
     if failures:
         verdict, reason = "FAIL", f"FAILURE_IN_{failures[0].upper()}"
-    elif all_completed and checker_positive and attested:
+    elif all_completed and checker_positive and attested and version and platform and artifacts:
         verdict, reason = "PASS", "ATTESTED_CHECKER_COMPLETED"
+    elif all_completed and checker_positive and attested:
+        verdict, reason = "UNKNOWN", "INSUFFICIENT_PROVENANCE"
     elif not any(phase["state"] != "NOT_RUN" for phase in phases.values()) and checker["state"] == "NOT_RUN":
         verdict, reason = "NOT_RUN", "NO_EXECUTION_EVIDENCE"
     else:

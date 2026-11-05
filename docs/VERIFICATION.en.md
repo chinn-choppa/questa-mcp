@@ -23,3 +23,5 @@ The internal Python-only `attested=True` switch tests the `PASS` transition with
 Up to 32 records, unique (`test_id`, `seed`) pairs, per-test evidence and `PASS/FAIL/UNKNOWN/NOT_RUN` counts. A negative indication yields `FAIL`; full regression `PASS` requires **all** reports to be trusted and positively checked. Otherwise `UNKNOWN` or `NOT_RUN`.
 
 Total request limit is 1 MiB. Names, hashes and versions supplied by the caller are **not validated local artifact provenance**. Never send private transcripts or credentials.
+
+Even the internal synthetic PASS transition requires non-empty tool version, OS and artifact hash metadata; missing provenance yields `UNKNOWN`.

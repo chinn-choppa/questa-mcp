@@ -38,6 +38,14 @@ class PhaseModelTests(unittest.TestCase):
         self.assertEqual(got["test_verdict"], "PASS")
         self.assertEqual(got["reason"], "ATTESTED_CHECKER_COMPLETED")
 
+    def test_positive_evidence_without_provenance_remains_unknown(self):
+        report = copy.deepcopy(self.passing)
+        report["tool_version"] = ""
+        report["artifacts"] = {}
+        got = assess_run(report, attested=True)
+        self.assertEqual(got["test_verdict"], "UNKNOWN")
+        self.assertEqual(got["reason"], "INSUFFICIENT_PROVENANCE")
+
     def test_exit_zero_without_checker_is_unknown(self):
         report = copy.deepcopy(self.passing)
         report.pop("checker")
