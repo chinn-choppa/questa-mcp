@@ -19,3 +19,7 @@ MCP inputs are untrusted, even when the transport is local. The current tools on
 Future #4 process execution needs a separate threat-model review, administrator-managed allowlists, canonical paths, symlink/path traversal defense, no `shell=True`, controlled subprocess trees, explicit resource limits, and opt-in artifact output. **Even an allowlisted DO script can execute Tcl with the user's permissions**; only deliberately trusted scripts can be enabled.
 
 No product/OS combination has yet been validated with a live licensed Questa run.
+
+## Approved DO scripts
+
+The operator must explicitly attest to a disposable workspace and reviewed script hash. **DO is executable Tcl and can escape the workspace.** This project is not an OS sandbox; use a separate restricted account or VM. Raw diagnostic disclosure is opt-in. See [Approved projects](docs/APPROVED_PROJECTS.en.md).

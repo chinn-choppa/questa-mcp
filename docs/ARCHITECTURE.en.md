@@ -28,3 +28,5 @@ A future administrator-provided, local configuration will map opaque project IDs
 Trusted DO scripts themselves remain code execution and must be intentionally reviewed. Compiler, elaborator, simulator and checker verdicts must be independent (#5). Waveforms and native WLF conversion are a separate opt-in stage (#6).
 
 Different editions/versions may use the newer QIS/Qrun path or the legacy vlog/vopt/vsim compatibility flow. The planned runner must require an explicitly validated profile; no implicit flow switching.
+
+The implementation now contains an **experimental** opt-in approved-profile executor; see [Approved projects](APPROVED_PROJECTS.en.md). It does not provide an OS sandbox or a verified vendor-specific flow.

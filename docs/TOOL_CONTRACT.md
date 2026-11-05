@@ -34,3 +34,7 @@
 `parse_diagnostics(text, tool="vsim", limit=200)` принимает `tool` из `vsim`, `vlog`, `vcom`. Вход — до 1 048 576 байт UTF-8 без NUL, без суррогатных Unicode; лимит 1–200. Ответ дополнительно содержит `unrecognized_lines`, `parser_status=UNKNOWN|PARTIAL|RECOGNIZED`, `test_verdict=FAIL|UNKNOWN`, `failure_evidence_count`, `eda_executed=false`. Каждая запись: `severity`, `code`, `emitter`, `file`, `line`, `column`, `time`, `instance`, `message`, `source_line`, `raw`, `format`, `confidence`. Поле `raw` сохраняет исходную строку без символа перевода строки. `confidence=HIGH` означает распознанный шаблон, **не успешную верификацию**. Текстовые пути не открываются. Нулевой exit code и сообщение «TEST PASSED» не дают права на PASS.
 
 Для защиты от чрезмерно длинных строк парсер отклоняет любую строку свыше **8192 символов**. Ошибочные входные типы возвращают ошибку инструмента, а не UNKNOWN/PASS.
+
+## Контракт исполнителя разрешённых профилей (#4)
+
+`list_approved_projects()` показывает только IDs или `NOT_CONFIGURED`/`INVALID_CONFIGURATION`. `run_approved_project(project_id: str)` возвращает `status`, `exit_code`, `eda_executed`, `test_verdict=FAIL|UNKNOWN`, пофазные `UNKNOWN`, число диагностик, необязательные явно разрешённые строки, размер и SHA-256 захваченного вывода, полноту журнала. Никаких Tcl/DO или путей от MCP; см. [конфигурацию](APPROVED_PROJECTS.md). Код 0 не становится PASS.

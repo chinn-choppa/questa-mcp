@@ -16,3 +16,7 @@ Changes follow Keep a Changelog. Semantic Versioning is planned once the public 
 
 ### Not yet implemented
 - Execution of commercial EDA, approved DO scripts, regression control, coverage and waveform export.
+
+### Experimental (#4)
+- Operator allowlist of trusted vsim/DO profiles, SHA-256 validation and bounded mock-tested subprocess execution.
+- No EDA product certification or proof of test PASS.

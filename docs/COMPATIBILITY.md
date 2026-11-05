@@ -20,3 +20,5 @@ Questa/ModelSim — коммерческие инструменты. Запус�
 Подтверждены только Python 3.11/3.13, MCP SDK 2.3.0 и протокол `tools/list`/`tools/call` через `stdio` на `ubuntu-latest` и `windows-latest`: [журнал](https://github.com/chinn-choppa/questa-mcp/actions/runs/42054703978). Любая реальная Questa/ModelSim, лицензия, поддержка разных редакций и Python 3.15 — **NOT_RUN**. Это уточнение имеет приоритет над исходной таблицей bootstrap.
 
 Для Questa 2025.2+ cocotb документирует отдельный маршрут QIS/Qrun и прежний совместимый маршрут vlog/vopt/vsim. Это **не** подтверждение поддержки Qrun данным сервером: сначала нужны реальные проверки конкретной версии/редакции. См. [документацию cocotb](https://docs.cocotb.org/en/stable/simulator_support.html).
+
+Опциональный запуск DO проверен только с mock-процессами. Командная совместимость и уничтожение деревьев реального Siemens vsim не подтверждены.

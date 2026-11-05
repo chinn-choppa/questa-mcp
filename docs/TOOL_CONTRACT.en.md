@@ -27,3 +27,7 @@ A recognized error/fatal/UVM_ERROR/UVM_FATAL establishes a failure indication, b
 A separate approved-project API must enforce allowlists, fixed executables, existing DO scripts and bounded workspace. Do not add `command`, unrestricted Tcl, arbitrary shell or network execution.
 
 For regex resource safety, any single log line longer than **8192 characters** is rejected. Invalid types generate tool errors, not UNKNOWN/PASS.
+
+## Approved runner contract (#4)
+
+`list_approved_projects()` lists safe IDs or `NOT_CONFIGURED`/`INVALID_CONFIGURATION`. `run_approved_project(project_id: str)` returns `status`, `exit_code`, `eda_executed`, `test_verdict=FAIL|UNKNOWN`, per-phase `UNKNOWN`, diagnostic count, optional explicitly disclosed entries, captured byte count and SHA-256, and log completeness. No caller-supplied Tcl/DO/paths; see [profile config](APPROVED_PROJECTS.en.md). Never convert zero exit code into PASS.
