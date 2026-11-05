@@ -33,3 +33,5 @@ For regex resource safety, any single log line longer than **8192 characters** i
 `list_approved_projects()` lists safe IDs or `NOT_CONFIGURED`/`INVALID_CONFIGURATION`. `run_approved_project(project_id: str)` returns `status`, `exit_code`, `eda_executed`, `test_verdict=FAIL|UNKNOWN`, per-phase `UNKNOWN`, diagnostic count, optional explicitly disclosed entries, captured byte count and SHA-256, and log completeness. No caller-supplied Tcl/DO/paths; see [profile config](APPROVED_PROJECTS.en.md). Never convert zero exit code into PASS.
 
 The runner executes an isolated temporary snapshot of SHA-256 checked DO bytes rather than reopening the mutable original. `TERMINATION_UNCONFIRMED` means process-tree shutdown was not verified; do not retry without inspection. `DO_HASH_MISMATCH` and `INVALID_SCRIPT` never launch EDA and return `eda_executed=false`.
+
+Questa/ModelSim `** Error (suppressible):` and `** Warning (suppressible):` are recognized; each diagnostic includes `qualifier="suppressible"` or `null`. Suppressible **errors remain failures**, not successful checks.

@@ -44,3 +44,5 @@
 ## Фазовая модель верификации (#5)
 
 Инструменты `assess_verification_run(record)` и `assess_regression(runs)` разделяют компиляцию, элаборацию, симуляцию, проверки и регрессии. Положительные заявления клиента **не повышаются до PASS**. См. [контракт верификации](VERIFICATION.md). Реальный Siemens EDA: **NOT_RUN**.
+
+Questa/ModelSim `** Error (suppressible):` и `** Warning (suppressible):` распознаются; записи содержат `qualifier="suppressible"` или `null`. Пометка suppressible **не переводит ошибку в успех**.
