@@ -2,11 +2,11 @@
 
 [Русский](TOOL_CONTRACT.md)
 
-The server uses local stdio, official MCP Python SDK 2.3.0 and **read-only** tools. No tool may execute commands or read project files.
+The server uses local stdio and official MCP SDK 2.3.0. Diagnostic and phase-analysis tools are **read-only**. Separately, an explicitly operator-enabled allowlisted runner may invoke installed vsim with a verified DO snapshot; it cannot run arbitrary caller commands.
 
 ## `server_info()`
 
-Returns `server`, `version`, `vendor_tool`, `stage`, `operations` and `eda_execution_supported=false`.
+Returns `server`, `version`, `vendor_tool`, `stage`, `operations` and `eda_execution_supported` (true only for an approved local profile).
 
 ## `tool_status()`
 
