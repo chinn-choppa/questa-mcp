@@ -18,3 +18,5 @@ The runtime never provides or downloads vendor binaries, IP, licenses or private
 For Questa 2025.2+, cocotb documents a distinct QIS/Qrun path alongside the legacy vlog/vopt/vsim compatibility flow. This is **not** evidence that this MCP adapter supports Qrun. Test specific editions and versions before claiming support. See [cocotb simulator support](https://docs.cocotb.org/en/stable/simulator_support.html).
 
 Opt-in approved DO execution is implemented with mock subprocesses but **not tested against real Siemens products**; neither command-line compatibility nor process-tree teardown has vendor-level acceptance yet.
+
+The optional cocotb JUnit checker relies on `COCOTB_RESULTS_FILE`, a cocotb-defined environment variable; actual DO scripts and vendor editions have **NOT_RUN** acceptance. Its binary hash pin verifies the locally approved file's content, **not** Siemens authenticity, product licensing or OS sandboxing. Independent vendor SVA/coverage success is not inferred from cocotb's JUnit XML. See [JUnit collector](JUNIT_EVIDENCE.en.md).

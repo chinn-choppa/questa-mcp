@@ -25,3 +25,6 @@ No stage should equate process exit 0 with self-checking test success.
 ## Conservative verification phases (#5)
 
 The read-only MCP tools `assess_verification_run(record)` and `assess_regression(runs)` track compile, elaboration, simulation, checker and regression independently. Caller-supplied positive claims are **UNVERIFIED**, never PASS. See [verification contract](VERIFICATION.en.md). Live Siemens EDA **NOT_RUN**.
+
+- [x] #5: add fresh cocotb JUnit checker and pinned local binary hash in an opt-in approved DO profile, covered by mock MCP calls
+- [ ] #5: actual Siemens/version-specific run, trusted compilation/elaboration and native SVA evidence, full regression PASS — NOT_RUN / NOT_IMPLEMENTED

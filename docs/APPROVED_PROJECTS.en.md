@@ -46,3 +46,7 @@ Windows and Linux public CI use mock subprocesses. Real licensed Questa/ModelSim
 ## Execution-time script snapshot
 
 The server reads a size-bounded DO file, checks the operator-approved SHA-256, and creates a private temporary snapshot outside the workspace. `vsim -do` receives the snapshot path, which is deleted after execution. This closes the gap between hashing and the simulator reopening the original DO, but **does not provide isolation** against an attacker with the same OS permissions, unsafe `source` commands or modifications of dependent files. On supported POSIX systems the final file read uses `O_NOFOLLOW`. If process-tree shutdown cannot be confirmed, the status is `TERMINATION_UNCONFIRMED`; descendants may survive, particularly on Windows. A real-Questa acceptance run in an OS sandbox remains mandatory.
+
+## Optional cocotb JUnit profile
+
+The local manifest can additionally specify `executable_sha256` and `checker: {"format":"cocotb-junit-v1","expected_tests":["check_counter"]}`. The hash is **required** when the checker is enabled. A fresh per-run `COCOTB_RESULTS_FILE` is read with 128 KiB and 256-test limits. A consistent self-checking result may set `checker_verdict=PASS`, but never asserts a full test/regression PASS. Changed executables return `EXECUTABLE_HASH_MISMATCH` before spawn or `EXECUTABLE_CHANGED` after spawn. Full details: [JUnit evidence](JUNIT_EVIDENCE.en.md).

@@ -63,3 +63,7 @@ A human operator can opt in to a SHA-256 checked private DO snapshot and the **a
 ## Conservative verification phases (#5)
 
 The read-only MCP tools `assess_verification_run(record)` and `assess_regression(runs)` track compile, elaboration, simulation, checker and regression independently. Caller-supplied positive claims are **UNVERIFIED**, never PASS. See [verification contract](docs/VERIFICATION.en.md). Live Siemens EDA **NOT_RUN**.
+
+## Experimental cocotb JUnit checker (#5)
+
+Approved local DO profiles may enable `checker.format="cocotb-junit-v1"`, an exact list of `expected_tests`, and a pinned `executable_sha256`. Each run receives a fresh `COCOTB_RESULTS_FILE` location. When the local process exits 0 and a complete XML report matches all expected tests, the response exposes `checker_verdict=PASS` **only for cocotb self-checks**. Overall `test_verdict`, independent assertions and regression remain `UNKNOWN` unless negative evidence establishes `FAIL`. No live licensed Siemens test was run. See [JUnit integration](docs/JUNIT_EVIDENCE.en.md).

@@ -46,3 +46,7 @@
 Инструменты `assess_verification_run(record)` и `assess_regression(runs)` разделяют компиляцию, элаборацию, симуляцию, проверки и регрессии. Положительные заявления клиента **не повышаются до PASS**. См. [контракт верификации](VERIFICATION.md). Реальный Siemens EDA: **NOT_RUN**.
 
 Questa/ModelSim `** Error (suppressible):` и `** Warning (suppressible):` распознаются; записи содержат `qualifier="suppressible"` или `null`. Пометка suppressible **не переводит ошибку в успех**.
+
+## Экспериментальный сбор свежих JUnit (#5)
+
+Если оператор разрешил `executable_sha256` и `checker={"format":"cocotb-junit-v1","expected_tests":[...]}`, `run_approved_project` задаёт новый приватный путь `COCOTB_RESULTS_FILE` для каждого запуска. Ответ включает `checker` (формат, состояние, причина, счётчики, SHA-256 XML), `checker_verdict=PASS|FAIL|UNKNOWN`, `assertions_verdict=UNKNOWN`, `regression_verdict=UNKNOWN`, `run_provenance`, `transcript_utf8_lossless`/`transcript_parser_complete`. **Общий `test_verdict=UNKNOWN` даже при checker PASS**, пока не подтверждены внешние assertions и полнота фаз. Негативные свидетельства процесса или checker позволяют `test_verdict=FAIL`. Хеш бинарника сверяется до и после запуска. MCP не принимает пути checker, XML, произвольные Tcl или команды исполнения. См. [правила](JUNIT_EVIDENCE.md). Неизвестные дополнительные JSON-поля SDK может игнорировать, но не трактует как команды.

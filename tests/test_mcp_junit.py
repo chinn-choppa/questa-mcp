@@ -72,9 +72,11 @@ class JunitMCPTests(unittest.IsolatedAsyncioTestCase):
                     self.assertFalse(good.structured_content["vendor_compatibility_verified"])
                     self.assertEqual(good.structured_content["diagnostics"], [])
                     rejected = await client.call_tool(
-                        "run_approved_project", {"project_id": "smoke", "command": "echo anything"}
+                        "run_approved_project", {"project_id": "../smoke"}
                     )
-                    self.assertTrue(rejected.is_error)
+                    self.assertFalse(rejected.is_error)
+                    self.assertEqual(rejected.structured_content["status"], "DENIED")
+                    self.assertFalse(rejected.structured_content["eda_executed"])
 
 
 if __name__ == "__main__":

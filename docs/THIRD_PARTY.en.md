@@ -11,3 +11,5 @@ This is an independently implemented MCP adapter. No source code was copied from
 - Questa/ModelSim binaries and licenses are user-provided and never redistributed.
 
 Review licenses and provide attribution before incorporating any external source code, templates or examples.
+
+- [cocotb](https://github.com/cocotb/cocotb): external JUnit XML report format and `COCOTB_RESULTS_FILE` documented interface, BSD-3-Clause project; no cocotb code bundled or dependency required by the MCP server. Tests use original synthetic XML.

@@ -27,3 +27,7 @@ The operator must explicitly attest to a disposable workspace and reviewed scrip
 ## #4 hardened boundary
 
 A private snapshot of the SHA-256 checked DO file prevents later edits to the original from silently changing the launched script. Referenced files remain mutable and the snapshot is not a user/OS permission boundary. `TERMINATION_UNCONFIRMED` requires manual inspection/cleanup, not automatic retries. A disposable workspace alone is not isolation.
+
+## Fresh JUnit collection (experimental)
+
+The checker-enabled profile requires a pinned SHA-256 of the executable, checked before and after the local run. The generated XML is accepted only from a new private location; symlinks, DTD/entities and inconsistent counts are rejected. Failure to decode a transcript losslessly or parse it fully blocks any positive checker result. This is not cryptographic attestation of the vendor or an OS sandbox: an approved Tcl script, or another process with equivalent OS rights, may still falsify XML. No raw JUnit report is returned to the MCP client; see [threat boundary](docs/JUNIT_EVIDENCE.en.md).

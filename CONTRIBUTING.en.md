@@ -19,3 +19,5 @@ A PR should be narrowly scoped, linked to its issue, and include positive, negat
 Never include internal design sources, real corporate logs, commercial binaries, license files, authorization tokens or copied third-party code without license review. For security reports use the private process in [SECURITY.en.md](SECURITY.en.md).
 
 Any change to approved DO execution requires process-boundary, path, timeout, output-limit and cancellation tests. Never propose an unrestricted shell/Tcl tool. See [configuration](docs/APPROVED_PROJECTS.en.md).
+
+When changing the opt-in JUnit integration, keep `checker_verdict` separate from overall `test_verdict`. Exercise corrupted XML, wrong expected names, stale/symlinked artifacts, unexpected encodings, executable hash tampering, process failure and MCP calls on synthetic data. Update [JUnit contract](docs/JUNIT_EVIDENCE.en.md) and its Russian counterpart in the same PR.

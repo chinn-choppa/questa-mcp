@@ -32,3 +32,7 @@ Trusted DO scripts themselves remain code execution and must be intentionally re
 Different editions/versions may use the newer QIS/Qrun path or the legacy vlog/vopt/vsim compatibility flow. The planned runner must require an explicitly validated profile; no implicit flow switching.
 
 The implementation now contains an **experimental** opt-in approved-profile executor; see [Approved projects](APPROVED_PROJECTS.en.md). It does not provide an OS sandbox or a verified vendor-specific flow.
+
+## Optional cocotb JUnit evidence flow (#5)
+
+`approved.run_approved_project` → pinned local `vsim` binary → SHA-256-checked private DO snapshot → unique temporary `COCOTB_RESULTS_FILE` → bounded `junit_evidence` parser. The runner returns a positive **checker-only** verdict when exact expected cases are complete. Overall test, independent SVA, compilation/elaboration and regression remain `UNKNOWN`. Existing `verification.assess_run` / `assess_regression` accept untrusted client data and cannot generate PASS. No generic simulator is added. See [JUnit collection](JUNIT_EVIDENCE.en.md).
