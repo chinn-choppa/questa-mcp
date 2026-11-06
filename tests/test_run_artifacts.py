@@ -169,6 +169,42 @@ class RunArtifactTests(unittest.IsolatedAsyncioTestCase):
                 )
                 self.assertEqual(denied.structured_content["state"], "DENIED")
 
+    async def test_missing_output_has_no_observation_link(self):
+        self.entry["regression_seeds"] = [7]
+        self.save()
+
+        async def spawn(*args, **kwargs):
+            return _Process()
+
+        with patch("questa_mcp.approved.asyncio.create_subprocess_exec", side_effect=spawn):
+            report = await run_approved_regression("public")
+        run = report["runs"][0]
+        self.assertIsNone(run["artifact_manifest"]["items"][0]["observed_in_run_id"])
+        self.assertEqual(run["artifact_manifest"]["items"][0]["origin"], "NO_RUN_ASSOCIATION")
+        lookup = list_run_artifacts("public", run["run_id"])
+        self.assertIsNone(lookup["items"][0]["observed_in_run_id"])
+
+    async def test_inherited_artifact_dir_cannot_override_fresh_run_root(self):
+        self.entry["regression_seeds"] = [7]
+        self.save()
+
+        async def spawn(*args, **kwargs):
+            env = kwargs["env"]
+            self.assertEqual(env["QUESTA_MCP_SEED"], "7")
+            self.assertNotEqual(env["QUESTA_MCP_ARTIFACT_DIR"], str(self.workspace))
+            self.assertNotIn("COCOTB_RESULTS_FILE", env)
+            if Path(args[3]).read_text() == "simulation":
+                (Path(env["QUESTA_MCP_ARTIFACT_DIR"]) / "wave.vcd").write_bytes(b"public")
+            return _Process()
+
+        with patch.dict(os.environ, {
+            "QUESTA_MCP_ARTIFACT_DIR": str(self.workspace),
+            "QUESTA_MCP_SEED": "999",
+            "COCOTB_RESULTS_FILE": str(self.workspace / "stale.xml"),
+        }), patch("questa_mcp.approved.asyncio.create_subprocess_exec", side_effect=spawn):
+            report = await run_approved_regression("public")
+        self.assertEqual(report["runs"][0]["artifact_manifest"]["items"][0]["state"], "HASHED")
+
     async def test_wlf_is_not_an_automatic_wavepeek_handoff(self):
         self.entry["run_artifacts"] = [
             {"id": "native", "path": "native.wlf", "format": "wlf"}
