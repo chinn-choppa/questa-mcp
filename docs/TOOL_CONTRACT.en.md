@@ -47,3 +47,7 @@ When an operator-approved profile contains `executable_sha256` and `checker={"fo
 ## `run_approved_regression(project_id)` (#5)
 
 Accepts only an approved ID. A local profile must pin exactly three `phase_scripts` (`compile`, `elaboration`, `simulation`), each with `do_script` and `do_sha256`, plus `executable_sha256`; optional `regression_seeds` supports 1–8 distinct integers 0…2³²−1. Response: `status`, `regression_verdict=FAIL|UNKNOWN|NOT_RUN`, `test_count`, `counts`, `runs[].run_id`, `runs[].seed`, `runs[].phases`, `runs[].checker_verdict`, `runs[].test_verdict`, `runs[].assertions_verdict`, and `provenance`. A completed phase proves only declared-process completion, not actual operations inside Tcl. Positive checker does not establish overall PASS. See [full contract](PHASE_RUNNER.en.md).
+
+## `list_run_artifacts(project_id, run_id)` (#6)
+
+Read-only tool accepting only an approved project ID and exactly 24 lowercase hex run-ID characters. A local profile fixes a safe `run_artifacts_dir` and nonempty `run_artifacts`. Outputs include `observed_in_run_id`, `origin=OBSERVED_IN_RUN_DIRECTORY_NOT_VENDOR_ATTESTED`, `produced_by_run_id=null`, `format_validated=false`. Invalid IDs return `DENIED`, absent directories `RUN_NOT_FOUND`. Absolute paths remain private by default. See [contract](RUN_ARTIFACTS.en.md).

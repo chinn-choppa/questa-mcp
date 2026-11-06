@@ -38,3 +38,7 @@ Changes follow Keep a Changelog. Semantic Versioning is planned once the public 
 ### Approved phase runner and regressions (#5)
 - Three SHA-256-allowlisted DO scripts, independent states, bounded seeds and new `run_approved_regression` MCP tool.
 - Mock-process failure/ordering tests and real MCP contract tests, without inferred verification PASS.
+
+### Run-scoped output metadata (#6)
+- Fresh directory per seed, fixed environment and read-only `list_run_artifacts` MCP tool.
+- Bounded SHA-256 metadata and explicit unattested vendor-provenance state.

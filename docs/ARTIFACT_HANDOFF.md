@@ -39,3 +39,7 @@
 В публичном CI используются искусственные маленькие VCD и файлы-заглушки FST/WLF/UCDB. Проверяется **только манифест**: ограничения путей и размера, SHA-256, отсутствие утечек путей, типизация и реальный MCP tools/call. Заглушки **не** считаются валидными FST или WLF. Реальный Wavepeek/wave-mcp, конвертация WLF, анализ coverage и лицензируемая Questa: **NOT_RUN**.
 
 Референсы: [Wavepeek](https://github.com/kleverhq/wavepeek), [wave-mcp](https://github.com/Tencent/wave-mcp), [ModelSim Command Reference, wlf2vcd](https://ww1.microchip.com/downloads/aemdocuments/documents/fpga/ProductDocuments/ReleaseNotes/modelsim_me_v105c_ref.pdf).
+
+## Артефакты по run_id
+
+Отдельный `list_run_artifacts(project_id, run_id)` работает с новым каталогом конкретного seed. Прежний `list_approved_artifacts` продолжает описывать старые файлы без привязки. Связь с каталогом не доказывает, что файл создал Siemens. См. [RUN_ARTIFACTS](RUN_ARTIFACTS.md).

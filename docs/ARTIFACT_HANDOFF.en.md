@@ -39,3 +39,7 @@ By default the MCP response **does not disclose absolute paths**. Only a human o
 Public CI uses a small synthetic VCD and placeholder FST/WLF/UCDB files. It verifies **only the manifest**: path restrictions, size/hash bounds, privacy, typed routes and real MCP tools/call. The placeholders are **not valid FST/WLF** evidence. Running actual Wavepeek/wave-mcp, converting WLF, interpreting coverage or executing licensed Questa remains **NOT_RUN**.
 
 References: [Wavepeek](https://github.com/kleverhq/wavepeek), [wave-mcp](https://github.com/Tencent/wave-mcp), [ModelSim Command Reference, wlf2vcd](https://ww1.microchip.com/downloads/aemdocuments/documents/fpga/ProductDocuments/ReleaseNotes/modelsim_me_v105c_ref.pdf).
+
+## Run-specific artifact directories
+
+A separate `list_run_artifacts(project_id, run_id)` reads a newly created output directory for a given seed. The original `list_approved_artifacts` continues to describe unrelated pre-existing files. Directory association does not prove the file was produced by Siemens. See [RUN_ARTIFACTS](RUN_ARTIFACTS.en.md).

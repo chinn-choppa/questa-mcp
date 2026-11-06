@@ -39,3 +39,6 @@ Valid cocotb JUnit establishes at most `checker_verdict=PASS` for the expected c
 Only administrator-approved fixed files are invoked. DO runs with the OS user's privileges; a disposable workspace **is not an OS sandbox**. Network/license-server access performed by the vendor tool or DO script requires the operator's consent. Cleanup on cancellation is protected, but complete descendant termination of a real `vsim` is not yet evidenced. Execution is limited to eight seeds × three phases, with per-process timeout and output limits.
 
 Public CI uses synthetic DO and mock processes, negative config and seed tests, and a real MCP `tools/list`/`tools/call` roundtrip. Licensed Siemens Questa/ModelSim, actual HDL phases and native assertions remain **NOT_RUN**.
+## New output directory per seed
+
+Optional `run_artifacts_dir` and `run_artifacts` create a fresh directory for each run ID; approved Tcl receives `QUESTA_MCP_ARTIFACT_DIR`. Files are retained until manual cleanup; vendor provenance remains unverified. See [RUN_ARTIFACTS](RUN_ARTIFACTS.en.md).

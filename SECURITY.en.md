@@ -41,3 +41,7 @@ Only operator-declared relative artifacts may be read; MCP callers cannot supply
 ## Approved multi-phase execution security
 
 The new MCP operation accepts no caller-supplied command, DO path or seed; all values are fixed in operator-local config. All three DO scripts and the executable must match SHA-256. Approved Tcl still runs as the current OS user and requires isolation. `QUESTA_MCP_SEED` is an environment variable, **not proof of simulator seed consumption**. See [phase-runner contract](docs/PHASE_RUNNER.en.md).
+
+## Retained output directories
+
+The operator prepares a safe root under workspace; the server creates random child directories without automatic deletion. The operator controls permissions, quotas and retention. The 8 MiB hashing cap does not constrain vendor disk writes. A same-user process may modify results. See [security boundary](docs/RUN_ARTIFACTS.en.md).

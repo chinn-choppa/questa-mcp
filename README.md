@@ -88,3 +88,7 @@ Apache License 2.0. Настоящий репозиторий не связан 
 ## Пофазный DO-исполнитель и seed-регрессии (#5)
 
 `run_approved_regression(project_id)` выполняет разрешённые оператором `compile` → `elaboration` → `simulation` по отдельным SHA-256-проверенным DO-сценариям для 1–8 фиксированных seed. Отказ фазы останавливает следующие стадии, каждое состояние сохраняется отдельно. Успех процесса **не означает PASS**; подтверждённый cocotb checker не подтверждает независимые assertions. Подробнее: [пофазный исполнитель](docs/PHASE_RUNNER.md).
+
+## Артефакты с уникальным run_id (#6)
+
+Опциональные `run_artifacts_dir` и `run_artifacts` создают новый каталог на каждый seed через `QUESTA_MCP_ARTIFACT_DIR`. `list_run_artifacts(project_id, run_id)` возвращает метаданные разрешённых файлов, но не считает их аттестованными Siemens: `produced_by_run_id=null`, `format_validated=false`. Каталоги сохраняются до ручной очистки. См. [RUN_ARTIFACTS](docs/RUN_ARTIFACTS.md).

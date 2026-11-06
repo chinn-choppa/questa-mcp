@@ -42,3 +42,8 @@ The read-only MCP tools `assess_verification_run(record)` and `assess_regression
 - [x] Operator-pinned three DO scripts, hash checks, sequential execution and independent process states.
 - [x] Up to eight configured seeds, failure short-circuit, synthetic unit/MCP contract tests.
 - [ ] Actual vendor phase semantics, consumed seeds, independent SVA and full PASS evidence require separate Siemens acceptance and additional integration.
+
+## Run-scoped artifact directories (#6)
+
+- [x] Fresh output directory per seed, read-only reinspection and synthetic real-MCP contract test.
+- [ ] Vendor-authenticated provenance and live Wavepeek/wave-mcp: `NOT_RUN`.

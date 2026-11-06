@@ -58,3 +58,7 @@ Questa/ModelSim `** Error (suppressible):` и `** Warning (suppressible):` ра�
 ## `run_approved_regression(project_id)` (#5)
 
 Только разрешённый ID. Профиль требует точно три `phase_scripts` (`compile`, `elaboration`, `simulation`), каждое с `do_script` и `do_sha256`, а также `executable_sha256`; необязательные `regression_seeds` содержат 1–8 уникальных целых 0…2³²−1. Ответ: `status`, `regression_verdict=FAIL|UNKNOWN|NOT_RUN`, `test_count`, `counts`, `runs[].run_id`, `runs[].seed`, `runs[].phases`, `runs[].checker_verdict`, `runs[].test_verdict`, `runs[].assertions_verdict`, `provenance`. Завершённая фаза обозначает завершение заявленного процесса, а не доказательство операции внутри DO. Положительный checker не приводит к общему PASS. См. [подробный контракт](PHASE_RUNNER.md).
+
+## `list_run_artifacts(project_id, run_id)` (#6)
+
+Read-only инструмент принимает ID разрешённого проекта и ровно 24 lowercase hex символа run_id. Локальный профиль задаёт безопасный каталог `run_artifacts_dir` и непустой список `run_artifacts`. Поля `observed_in_run_id`, `origin=OBSERVED_IN_RUN_DIRECTORY_NOT_VENDOR_ATTESTED`, `produced_by_run_id=null`, `format_validated=false`. Некорректные ID дают `DENIED`, отсутствующий каталог — `RUN_NOT_FOUND`. Абсолютные пути по умолчанию скрыты. См. [контракт](RUN_ARTIFACTS.md).
