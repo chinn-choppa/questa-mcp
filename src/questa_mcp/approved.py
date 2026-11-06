@@ -348,6 +348,47 @@ def list_run_artifacts(project_id: str, run_id: str) -> dict[str, object]:
         return {"state": "INVALID_CONFIGURATION", "items": [], "eda_executed": False}
 
 
+
+def prepare_run_handoff(
+    project_id: str, run_id: str, artifact_id: str, consumer: str
+) -> dict[str, object]:
+    """Не запускает анализатор: только явно разрешённый локальный указатель VCD/FST."""
+    if (not isinstance(project_id, str) or not _ID.fullmatch(project_id)
+            or not isinstance(run_id, str) or not re.fullmatch(r"[0-9a-f]{24}", run_id)
+            or not isinstance(artifact_id, str) or not _ID.fullmatch(artifact_id)
+            or not isinstance(consumer, str) or consumer not in ("wavepeek", "wave-mcp")):
+        return {"status": "DENIED", "external_execution": "NOT_RUN"}
+    try:
+        profile = _load_approved_profiles().get(project_id)
+        if profile is None:
+            return {"status": "DENIED", "external_execution": "NOT_RUN"}
+        if not profile.expose_artifact_paths:
+            return {"status": "OPT_IN_REQUIRED", "external_execution": "NOT_RUN"}
+        manifest = list_run_artifacts(project_id, run_id)
+        if manifest["state"] != "OPERATOR_DECLARED_READ_ONLY":
+            return {"status": manifest["state"], "external_execution": "NOT_RUN"}
+        item = next((x for x in manifest["items"] if x["id"] == artifact_id), None)
+        if item is None:
+            return {"status": "ARTIFACT_NOT_ALLOWLISTED", "external_execution": "NOT_RUN"}
+        if item["format"] not in ("VCD", "FST"):
+            return {"status": "UNSUPPORTED_NATIVE_FORMAT", "external_execution": "NOT_RUN"}
+        if item["state"] not in ("HASHED", "HASH_SKIPPED_LARGE_FILE") or not item["local_path"]:
+            return {"status": "ARTIFACT_UNAVAILABLE", "external_execution": "NOT_RUN"}
+        return {
+            "status": "READY_FOR_EXTERNAL_CLIENT",
+            "consumer": consumer, "project_id": project_id,
+            "run_id": run_id, "artifact_id": artifact_id,
+            "format": item["format"], "size_bytes": item["size_bytes"],
+            "sha256": item["sha256"], "hash_status": item["state"],
+            "local_path": item["local_path"], "format_validated": False,
+            "origin": item["origin"], "vendor_attested": False,
+            "external_execution": "NOT_RUN",
+            "consumer_support": "DECLARED_FORMAT_NOT_INTEGRATION_TESTED",
+        }
+    except (OSError, ValueError, json.JSONDecodeError):
+        return {"status": "INVALID_CONFIGURATION", "external_execution": "NOT_RUN"}
+
+
 async def _await_protected(task: asyncio.Task) -> object:
     """Дождаться завершения дочерней задачи при повторных cancel() родителя."""
     current = asyncio.current_task()

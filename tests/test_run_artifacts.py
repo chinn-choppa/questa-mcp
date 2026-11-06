@@ -13,7 +13,7 @@ from unittest.mock import patch
 from mcp import Client
 
 from questa_mcp.approved import (
-    CONFIG_ENV, list_approved_projects, list_run_artifacts
+    CONFIG_ENV, list_approved_projects, list_run_artifacts, prepare_run_handoff
 )
 from questa_mcp.phase_runner import run_approved_regression
 from questa_mcp.server import create_server
@@ -122,8 +122,15 @@ class RunArtifactTests(unittest.IsolatedAsyncioTestCase):
                 item["sha256"],
             )
         self.assertEqual(list_run_artifacts("public", "0" * 24)["state"], "RUN_NOT_FOUND")
+        self.assertEqual(
+            prepare_run_handoff("public", result["runs"][0]["run_id"], "clock", "wavepeek")["status"],
+            "OPT_IN_REQUIRED",
+        )
 
     async def test_real_mcp_roundtrip_for_observed_run_directory(self):
+        self.entry["expose_artifact_paths"] = True
+        self.save()
+
         async def spawn(*args, **kwargs):
             phase = Path(args[3]).read_text()
             if phase == "simulation":
@@ -146,10 +153,48 @@ class RunArtifactTests(unittest.IsolatedAsyncioTestCase):
                 self.assertFalse(lookup.is_error)
                 self.assertEqual(lookup.structured_content["count"], 1)
                 self.assertEqual(lookup.structured_content["items"][0]["state"], "HASHED")
+                handoff = await client.call_tool(
+                    "prepare_run_handoff",
+                    {"project_id": "public", "run_id": run_id, "artifact_id": "clock",
+                     "consumer": "wavepeek"},
+                )
+                self.assertFalse(handoff.is_error)
+                self.assertEqual(handoff.structured_content["status"], "READY_FOR_EXTERNAL_CLIENT")
+                self.assertEqual(handoff.structured_content["external_execution"], "NOT_RUN")
+                self.assertFalse(handoff.structured_content["format_validated"])
+                self.assertEqual(handoff.structured_content["format"], "VCD")
+                self.assertTrue(handoff.structured_content["local_path"].endswith("wave.vcd"))
                 denied = await client.call_tool(
                     "list_run_artifacts", {"project_id": "public", "run_id": "../whatever"}
                 )
                 self.assertEqual(denied.structured_content["state"], "DENIED")
+
+    async def test_wlf_is_not_an_automatic_wavepeek_handoff(self):
+        self.entry["run_artifacts"] = [
+            {"id": "native", "path": "native.wlf", "format": "wlf"}
+        ]
+        self.entry["expose_artifact_paths"] = True
+        self.entry["regression_seeds"] = [7]
+        self.save()
+
+        async def spawn(*args, **kwargs):
+            if Path(args[3]).read_text() == "simulation":
+                (Path(kwargs["env"]["QUESTA_MCP_ARTIFACT_DIR"]) / "native.wlf").write_bytes(
+                    b"synthetic WLF placeholder"
+                )
+            return _Process()
+
+        with patch("questa_mcp.approved.asyncio.create_subprocess_exec", side_effect=spawn):
+            result = await run_approved_regression("public")
+        run_id = result["runs"][0]["run_id"]
+        response = prepare_run_handoff("public", run_id, "native", "wavepeek")
+        self.assertEqual(response["status"], "UNSUPPORTED_NATIVE_FORMAT")
+        self.assertNotIn("local_path", response)
+        self.assertEqual(response["external_execution"], "NOT_RUN")
+        self.assertEqual(
+            prepare_run_handoff("public", run_id, "native", "untrusted-executable")["status"],
+            "DENIED",
+        )
 
     async def test_invalid_root_and_artifact_configuration_denied(self):
         for root in ("../other", "C:/secret", r"new-runs\evil", "/tmp", ""):
