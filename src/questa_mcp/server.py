@@ -6,6 +6,8 @@ from typing import Literal
 
 from .approved import (
     list_approved_artifacts as artifacts_list,
+    list_run_artifacts as run_artifacts_list,
+    prepare_run_handoff as handoff_prepare,
     list_approved_projects as approved_list,
     run_approved_project as approved_run,
 )
@@ -36,7 +38,8 @@ def create_server() -> MCPServer:
             "operations": ["server_info", "tool_status", "parse_diagnostics",
                            "list_approved_projects", "run_approved_project",
                            "assess_verification_run", "assess_regression",
-                           "list_approved_artifacts", "run_approved_regression"],
+                           "list_approved_artifacts", "list_run_artifacts",
+                           "run_approved_regression", "prepare_run_handoff"],
             "eda_execution_supported": enabled,
         }
 
@@ -61,6 +64,19 @@ def create_server() -> MCPServer:
     def list_approved_artifacts(project_id: str) -> dict[str, object]:
         """Выдать только metadata разрешённых VCD/FST/WLF/UCDB без загрузок."""
         return artifacts_list(project_id)
+
+    @server.tool()
+    def list_run_artifacts(project_id: str, run_id: str) -> dict[str, object]:
+        """Описание файлов конкретного каталога запуска, без произвольных путей."""
+        return run_artifacts_list(project_id, run_id)
+
+    @server.tool()
+    def prepare_run_handoff(
+        project_id: str, run_id: str, artifact_id: str,
+        consumer: Literal["wavepeek", "wave-mcp"],
+    ) -> dict[str, object]:
+        """Выдать разрешённый локальный указатель без запуска внешнего анализатора."""
+        return handoff_prepare(project_id, run_id, artifact_id, consumer)
 
     @server.tool()
     async def run_approved_project(project_id: str) -> dict[str, object]:

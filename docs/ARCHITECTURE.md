@@ -61,3 +61,7 @@ MCP-клиент (Codex / Claude / OpenCode / др.)
 ## Отдельный исполнитель фаз
 
 `server.run_approved_regression` → `phase_runner.run_approved_regression` → `_load_approved_profiles` → три фиксированных SHA-256-проверенных DO → `_execute` с независимыми наблюдаемыми состояниями → опциональный свежий cocotb JUnit. Ошибки останавливают последующие фазы одного seed, но не стирают свидетельства других запусков. Ни один положительный путь не возвращает общий PASS без доверенного подтверждения assertions. См. [фазы](PHASE_RUNNER.md).
+
+## Поток данных артефактов запуска
+
+`phase_runner` → уникальный `<approved-root>/<run_id>` → переменная `QUESTA_MCP_ARTIFACT_DIR` → контролируемый манифест `inspect_approved_artifacts` → `list_run_artifacts`. Результат сообщает только наблюдаемое местоположение и SHA-256, не удостоверяет происхождение производителя; `produced_by_run_id=null`. См. [контракт](RUN_ARTIFACTS.md).

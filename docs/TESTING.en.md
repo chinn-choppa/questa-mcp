@@ -46,3 +46,9 @@ Synthetic VCD and placeholder FST/WLF/UCDB files test **metadata and routing onl
 ## Approved phase regressions (#5)
 
 Unit/mock and real in-process MCP tests check the ordered three phases, seeds, compile/elaboration failure short-circuit, no false PASS, invalid/duplicate seeds, executable hash mismatch and missing profiles. All EDA subprocesses are synthetic mocks. Actual licensed Questa remains `NOT_RUN`. See [phase-runner tests](PHASE_RUNNER.en.md).
+
+## Run-specific directory tests
+
+Synthetic processes test distinct seeds/run IDs, `QUESTA_MCP_ARTIFACT_DIR`, hashes, path disclosure, invalid roots and symlinks, plus real MCP tools/call for execution and artifact reinspection. Commercial EDA is not required.
+
+Typed handoff has unit and real MCP `tools/call` checks: missing path-consent, VCD pointer, refusal of WLF and unknown consumers, and no fabricated `external_execution`. Real Wavepeek/wave-mcp remains for final acceptance only.

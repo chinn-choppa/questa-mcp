@@ -44,3 +44,7 @@ The implementation now contains an **experimental** opt-in approved-profile exec
 ## Phase execution architecture
 
 `server.run_approved_regression` → `phase_runner.run_approved_regression` → `_load_approved_profiles` → three fixed SHA-256-checked DO scripts → `_execute` with independent observed states → optional fresh cocotb JUnit. A failed phase stops subsequent phases of that seed without hiding other runs. No positive flow asserts overall PASS without trustworthy assertion evidence. See [phase runner](PHASE_RUNNER.en.md).
+
+## Run artifact data flow
+
+`phase_runner` → unique `<approved-root>/<run_id>` → `QUESTA_MCP_ARTIFACT_DIR` → bounded `inspect_approved_artifacts` metadata → `list_run_artifacts`. The result reports observed location and SHA-256, not authenticated vendor provenance; `produced_by_run_id=null`. See [contract](RUN_ARTIFACTS.en.md).

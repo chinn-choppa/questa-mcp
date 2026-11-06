@@ -75,3 +75,9 @@ Approved local DO profiles may enable `checker.format="cocotb-junit-v1"`, an exa
 ## Approved phase runner and seeded regressions (#5)
 
 `run_approved_regression(project_id)` invokes independently SHA-256 checked operator-approved `compile` → `elaboration` → `simulation` DO files for 1–8 configured seeds. Later phases stop on errors and every phase has independent evidence. Zero process exit **does not establish PASS**; positive cocotb checks do not prove independent assertions. See [phase runner](docs/PHASE_RUNNER.en.md).
+
+## Artifacts scoped to unique run IDs (#6)
+
+Optional `run_artifacts_dir` and `run_artifacts` create a fresh directory per seed through `QUESTA_MCP_ARTIFACT_DIR`. `list_run_artifacts(project_id, run_id)` returns operator-allowed metadata without claiming Siemens authorship: `produced_by_run_id=null`, `format_validated=false`. Retention is operator-managed. See [RUN_ARTIFACTS](docs/RUN_ARTIFACTS.en.md).
+
+For a trusted local Wavepeek/wave-mcp client, `prepare_run_handoff` returns a typed VCD/FST pointer only after explicit path-disclosure opt-in. This MCP server **does not execute** an analyzer; external compatibility and actual results remain `NOT_RUN`. See [contract](docs/RUN_ARTIFACTS.en.md).

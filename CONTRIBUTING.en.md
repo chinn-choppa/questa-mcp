@@ -25,3 +25,5 @@ When changing the opt-in JUnit integration, keep `checker_verdict` separate from
 For #6 use public synthetic waveform/coverage artifacts only. Keep metadata separate from proof of waveform validity or run provenance. Never add caller-provided arbitrary paths, automatic downloads, WLF converter execution or duplicate third-party decoders. Update [handoff docs](docs/ARTIFACT_HANDOFF.en.md) and the Russian counterpart together.
 
 Changes to `phase_runner` must test failure short-circuiting, malformed seeds, transcript evidence and no overall PASS. Any added executable surface requires a separate security/architecture review. Keep [phase-runner docs](docs/PHASE_RUNNER.en.md) and [Russian](docs/PHASE_RUNNER.md) synchronized.
+
+For `list_run_artifacts`, retain traversal, ID and no-false-`produced_by_run_id` tests. Do not add automatic deletion of user files without separate architecture review. See [documentation](docs/RUN_ARTIFACTS.en.md).
