@@ -67,3 +67,7 @@ The read-only MCP tools `assess_verification_run(record)` and `assess_regression
 ## Experimental cocotb JUnit checker (#5)
 
 Approved local DO profiles may enable `checker.format="cocotb-junit-v1"`, an exact list of `expected_tests`, and a pinned `executable_sha256`. Each run receives a fresh `COCOTB_RESULTS_FILE` location. When the local process exits 0 and a complete XML report matches all expected tests, the response exposes `checker_verdict=PASS` **only for cocotb self-checks**. Overall `test_verdict`, independent assertions and regression remain `UNKNOWN` unless negative evidence establishes `FAIL`. No live licensed Siemens test was run. See [JUnit integration](docs/JUNIT_EVIDENCE.en.md).
+
+## Read-only artifact handoff (#6)
+
+`list_approved_artifacts(project_id)` returns metadata for **operator-allowlisted** VCD/FST/WLF/UCDB files: format, size, bounded SHA-256, possible external consumers and provenance limits. Paths are hidden by default, contents never returned, and no conversion/upload/external executable is invoked. An existing workspace file is **not proof of production by the current run**. See [safe artifact handoff](docs/ARTIFACT_HANDOFF.en.md).

@@ -28,3 +28,9 @@ Changes follow Keep a Changelog. Semantic Versioning is planned once the public 
 - Synthetic mock subprocess and real MCP tools/call contract tests; no licensed Siemens validation
 
 - Protected child cleanup waits through repeated MCP cancellations and cancellation during subprocess spawn before removing the DO snapshot (mock tested).
+
+### Experimental artifact handoff (#6)
+- Read-only `list_approved_artifacts` MCP tool: operator-allowlisted VCD/FST/WLF/UCDB metadata, declared time units and bounded SHA-256.
+- Explicit external consumer routes and native WLF/UCDB limitations, without analyzer execution, automatic conversion or uploads.
+- Synthetic security and real MCP contract tests on Windows/Linux.
+

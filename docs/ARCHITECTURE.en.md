@@ -36,3 +36,7 @@ The implementation now contains an **experimental** opt-in approved-profile exec
 ## Optional cocotb JUnit evidence flow (#5)
 
 `approved.run_approved_project` → pinned local `vsim` binary → SHA-256-checked private DO snapshot → unique temporary `COCOTB_RESULTS_FILE` → bounded `junit_evidence` parser. The runner returns a positive **checker-only** verdict when exact expected cases are complete. Overall test, independent SVA, compilation/elaboration and regression remain `UNKNOWN`. Existing `verification.assess_run` / `assess_regression` accept untrusted client data and cannot generate PASS. No generic simulator is added. See [JUnit collection](JUNIT_EVIDENCE.en.md).
+
+## Metadata-only external artifact handoff (#6)
+
+`server.list_approved_artifacts` → `approved` (select fixed operator-defined IDs) → `artifact_handoff` (safe relative-path validation, metadata and size-bounded hashing). Wavepeek/wave-mcp consumer routes are returned as **descriptors only**, with no subprocess, network request or automatic export. WLF and UCDB are separate native formats; existing workspace files have unverified run provenance. See [handoff manifest](ARTIFACT_HANDOFF.en.md).
