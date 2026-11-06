@@ -55,3 +55,7 @@ Read-only tool accepting only an approved project ID and exactly 24 lowercase he
 ## `prepare_run_handoff(project_id, run_id, artifact_id, consumer)` (#6)
 
 Only approved `project_id`, 24-hex `run_id`, approved `artifact_id`, and `consumer=wavepeek|wave-mcp`. Without local path-disclosure consent returns `OPT_IN_REQUIRED`. VCD/FST only; native WLF/UCDB yield `UNSUPPORTED_NATIVE_FORMAT`. `READY_FOR_EXTERNAL_CLIENT` means a local pointer exists, **not successful analyzer execution**. No secrets except operator-approved absolute paths. See [details](RUN_ARTIFACTS.en.md).
+
+## External analyzer is a separate trusted consumer
+
+`prepare_run_handoff` **does not invoke** Wavepeek and still returns `external_execution=NOT_RUN`, `format_validated=false`. A separate [CI](https://github.com/chinn-choppa/questa-mcp/actions/runs/42196936606) verified real Wavepeek v3.2.0 reading VCD/FST paths obtained via this MCP contract. This is **external evidence for the public fixture only**, not an MCP guarantee. Missing files and unsettled phases do not get `observed_in_run_id`.

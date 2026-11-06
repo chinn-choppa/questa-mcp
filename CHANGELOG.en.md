@@ -44,3 +44,8 @@ Changes follow Keep a Changelog. Semantic Versioning is planned once the public 
 - Bounded SHA-256 metadata and explicit unattested vendor-provenance state.
 
 - New read-only `prepare_run_handoff`: local pointers only to allowlisted VCD/FST after explicit path-disclosure consent; WLF/UCDB never misrepresented as supported.
+
+### Verified external Wavepeek VCD/FST (#6)
+- A separate Linux CI verified official SHA-256-pinned Wavepeek v3.2.0 reading public VCD/FST from typed MCP calls and detecting `tb.clk` transitions.
+- Open-source GTKWave `vcd2fst` produced FST; EDA processes were mocked, licensed Siemens: `NOT_RUN`.
+- Missing files/incomplete phases no longer gain run association; inherited execution environment is sanitized.

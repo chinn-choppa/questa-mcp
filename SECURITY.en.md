@@ -47,3 +47,7 @@ The new MCP operation accepts no caller-supplied command, DO path or seed; all v
 The operator prepares a safe root under workspace; the server creates random child directories without automatic deletion. The operator controls permissions, quotas and retention. The 8 MiB hashing cap does not constrain vendor disk writes. A same-user process may modify results. See [security boundary](docs/RUN_ARTIFACTS.en.md).
 
 `prepare_run_handoff` discloses a VCD/FST absolute path **only** after local `expose_artifact_paths=true`. Native WLF/UCDB are excluded; no arbitrary commands or network access. A same-user process may still modify the file after inspection.
+
+## Inherited environment boundary (#6)
+
+The subprocess environment clears inherited `QUESTA_MCP_ARTIFACT_DIR`, `QUESTA_MCP_SEED` and `COCOTB_RESULTS_FILE` before setting server-selected values for the current phase. Missing files and unsettled phases do not get `observed_in_run_id`. This does not prevent writes by other code with the same OS privileges; isolation remains necessary.

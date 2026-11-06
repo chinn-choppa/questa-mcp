@@ -17,3 +17,6 @@ Review licenses and provide attribution before incorporating any external source
 - [Wavepeek](https://github.com/kleverhq/wavepeek) (Apache-2.0) and [Tencent wave-mcp](https://github.com/Tencent/wave-mcp) (Apache-2.0): only documented VCD/FST/FSDB support is used to describe external routes; no code is copied or integrated.
 - [ModelSim wlf2vcd](https://ww1.microchip.com/downloads/aemdocuments/documents/fpga/ProductDocuments/ReleaseNotes/modelsim_me_v105c_ref.pdf): specific vendor-edition reference only; the converter is never invoked.
 
+
+- [Wavepeek](https://github.com/kleverhq/wavepeek) v3.2.0: official binary fetched **only in Linux CI**, SHA-256 `8dc788e7c8b065fc422e5274e54d9466ace52ed748c673f54d9b7aedb9b5b711`, never bundled or launched by MCP runtime.
+- [GTKWave vcd2fst](https://gtkwave.github.io/gtkwave/man/vcd2fst.1.html): open-source VCD→FST converter installed via `apt` in integration CI only. No Siemens commercial components are used.
