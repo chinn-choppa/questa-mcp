@@ -64,3 +64,9 @@
 
 - [x] #6: типизированный указатель VCD/FST через `prepare_run_handoff`, без запуска анализатора и без поддержки WLF напрямую.
 - [ ] #6: фактическое открытие VCD/FST и проверка внешнего анализатора — финальная приёмка.
+
+## Реальная проверка маршрута Wavepeek (#6)
+
+- [x] Настоящий Wavepeek v3.2.0 в Linux CI: публичный VCD/FST через реальные MCP-вызовы `run_approved_regression` и `prepare_run_handoff`, [CI](https://github.com/chinn-choppa/questa-mcp/actions/runs/42196936606)
+- [x] Публичный FST, созданный `vcd2fst` (GTKWave), проверен Wavepeek на двух переходах `tb.clk`
+- [ ] `wave-mcp`, WLF/UCDB, реальная Questa, аттестация производителя и полная RTL-регрессия: **NOT_RUN**

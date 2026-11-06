@@ -38,8 +38,14 @@ Files persist after execution. Only when an operator enables `expose_artifact_pa
 
 Run directories are **not automatically deleted**. The operator must manage permissions, disk quotas, cleanup, and retention. The 8 MiB hashing/read limit **does not cap file size written by the subprocess**. A different process with the same OS privileges can tamper with outputs; unpredictable run IDs prevent incidental reuse, not hostile modification or cryptographic forgery.
 
-Invalid or inaccessible output-root configuration fails closed. Public tests use a mock simulator writing two seed directories, malformed/root-escape paths, optional path disclosure and a real MCP tools/call roundtrip. Licensed Questa, actual Wavepeek, wlf2vcd, valid FST/UCDB and vendor-authenticated provenance remain **NOT_RUN**.
+Invalid or inaccessible output-root configuration fails closed. Public tests use a mock simulator writing two seed directories, malformed/root-escape paths, optional path disclosure and a real MCP tools/call roundtrip. Licensed Questa, licensed Questa, `wave-mcp`, wlf2vcd, WLF/UCDB and vendor-authenticated provenance remain **NOT_RUN**. Real Wavepeek VCD/FST was independently verified on mock-EDA output in Linux CI.
 
 ## Typed handoff to an external waveform consumer
 
 `prepare_run_handoff(project_id, run_id, artifact_id, consumer)` returns a *local pointer* without invoking an analyzer. Only `wavepeek` and `wave-mcp` are accepted consumer names. The operator must enable `expose_artifact_paths=true`; otherwise `OPT_IN_REQUIRED` returns no path. Only allowlisted VCD/FST files in `HASHED` or `HASH_SKIPPED_LARGE_FILE` state may return `status=READY_FOR_EXTERNAL_CLIENT`. Native WLF/UCDB yield `UNSUPPORTED_NATIVE_FORMAT`; absent files yield `ARTIFACT_UNAVAILABLE`. The pointer includes path, format, size, optional SHA-256, `format_validated=false`, `vendor_attested=false`, and `external_execution=NOT_RUN`. The trusted external MCP client must open the file itself. This operation **does not prove** Wavepeek/wave-mcp actually parsed it or that signals are valid.
+
+## Real external Wavepeek acceptance (2026-11-06)
+
+[GitHub Actions](https://github.com/chinn-choppa/questa-mcp/actions/runs/42196936606): the official SHA-256-verified Wavepeek v3.2.0 read `tb.clk` from approved VCD and FST paths returned by **real MCP calls** `run_approved_regression` → `prepare_run_handoff`. The three DO phases used **mock subprocesses**, not Siemens. A valid FST was created via open-source GTKWave `vcd2fst` in CI only. Both `WAVEPEEK_PUBLIC_VCD=PASS` and `WAVEPEEK_PUBLIC_FST=PASS` were observed. This validates the **local handoff**, not actual Questa, vendor authorship, or overall RTL PASS. `wave-mcp`, WLF/UCDB and licensed EDA remain **NOT_RUN**.
+
+Security improvement: missing artifacts and unsettled phases do not receive `observed_in_run_id`. Inherited `QUESTA_MCP_SEED`, `COCOTB_RESULTS_FILE` and `QUESTA_MCP_ARTIFACT_DIR` are cleared before setting trusted values for the current run.

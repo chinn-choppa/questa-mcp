@@ -185,10 +185,28 @@ async def run_approved_regression(project_id: str) -> dict[str, object]:
                 artifact_dir, profile.run_artifact_specs,
                 expose_paths=profile.expose_artifact_paths,
             )
+            # Отсутствующий файл и незавершённый/неизвестный процесс не получают
+            # подтверждённой связи с данным запуском.
+            settled = all(
+                result["state"] in {"COMPLETED", "FAILED", "NOT_RUN"}
+                for result in phases.values()
+            )
             for entry in manifest["items"]:
-                entry["origin"] = "OBSERVED_IN_RUN_DIRECTORY_NOT_VENDOR_ATTESTED"
-                entry["observed_in_run_id"] = run_id
-            origin = "RUN_SCOPED_DIRECTORY_OBSERVED_NOT_VENDOR_ATTESTED"
+                observed = (
+                    settled and entry["state"] in {
+                        "HASHED", "HASH_SKIPPED_LARGE_FILE"
+                    }
+                )
+                entry["origin"] = (
+                    "OBSERVED_IN_RUN_DIRECTORY_NOT_VENDOR_ATTESTED" if observed
+                    else "NO_RUN_ASSOCIATION"
+                )
+                entry["observed_in_run_id"] = run_id if observed else None
+                entry["produced_by_run_id"] = None
+            origin = (
+                "RUN_SCOPED_DIRECTORY_OBSERVED_NOT_VENDOR_ATTESTED"
+                if settled else "INCOMPLETE_RUN_NO_PROVENANCE"
+            )
         runs.append({
             "run_id": run_id, "seed": seed,
             "seed_source": "OPERATOR_CONFIGURED_ENV_NOT_OBSERVED_BY_SIMULATOR",

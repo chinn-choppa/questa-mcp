@@ -51,4 +51,8 @@ Unit/mock and real in-process MCP tests check the ordered three phases, seeds, c
 
 Synthetic processes test distinct seeds/run IDs, `QUESTA_MCP_ARTIFACT_DIR`, hashes, path disclosure, invalid roots and symlinks, plus real MCP tools/call for execution and artifact reinspection. Commercial EDA is not required.
 
-Typed handoff has unit and real MCP `tools/call` checks: missing path-consent, VCD pointer, refusal of WLF and unknown consumers, and no fabricated `external_execution`. Real Wavepeek/wave-mcp remains for final acceptance only.
+Typed handoff has unit and real MCP `tools/call` checks: missing path-consent, VCD pointer, refusal of WLF and unknown consumers, and no fabricated `external_execution`. Real Wavepeek VCD/FST was checked in separate Linux CI; `wave-mcp` remains `NOT_RUN`.
+
+## Real Wavepeek CLI, no commercial EDA
+
+A separate [CI](https://github.com/chinn-choppa/questa-mcp/actions/runs/42196936606) runs official Wavepeek 3.2.0 on public VCD/FST, observing `tb.clk` transitions at 0ns/5ns. Real MCP `run_approved_regression` calls are used, with **mocked** Siemens processes. The `prepare_run_handoff` MCP call returns a local approved path; Wavepeek is executed separately **outside MCP**. Valid FST comes from GTKWave `vcd2fst`. Standard CI also covers missing files not gaining `observed_in_run_id` and sanitization of inherited execution environment. This is **not** licensed Questa or `wave-mcp` acceptance.

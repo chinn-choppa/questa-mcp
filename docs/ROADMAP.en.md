@@ -50,3 +50,9 @@ The read-only MCP tools `assess_verification_run(record)` and `assess_regression
 
 - [x] #6: typed VCD/FST pointer via `prepare_run_handoff`, without analyzer invocation or native WLF assumptions.
 - [ ] #6: actual VCD/FST open in an external analyzer — final acceptance.
+
+## Real Wavepeek handoff check (#6)
+
+- [x] Real Wavepeek v3.2.0 in Linux CI: public VCD/FST via actual `run_approved_regression` and `prepare_run_handoff` MCP calls, [CI](https://github.com/chinn-choppa/questa-mcp/actions/runs/42196936606)
+- [x] Open-source GTKWave `vcd2fst` produces valid FST inspected by Wavepeek at clock transitions
+- [ ] `wave-mcp`, WLF/UCDB, licensed Questa, vendor attribution and full RTL regression: **NOT_RUN**

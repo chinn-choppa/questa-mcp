@@ -66,3 +66,7 @@ Read-only инструмент принимает ID разрешённого п
 ## `prepare_run_handoff(project_id, run_id, artifact_id, consumer)` (#6)
 
 Только разрешённый `project_id`, 24-hex `run_id`, разрешённый `artifact_id` и `consumer=wavepeek|wave-mcp`. Без локального согласия на путь — `OPT_IN_REQUIRED`. Только VCD/FST; WLF/UCDB — `UNSUPPORTED_NATIVE_FORMAT`. `READY_FOR_EXTERNAL_CLIENT` означает наличие локального указателя, **не успешный запуск анализатора**. Ответ без секретов, кроме отдельно разрешённого абсолютного пути. См. [подробности](RUN_ARTIFACTS.md).
+
+## Внешний анализатор: отдельный доверенный потребитель
+
+`prepare_run_handoff` **не запускает** Wavepeek и по-прежнему возвращает `external_execution=NOT_RUN`, `format_validated=false`. В отдельном [CI](https://github.com/chinn-choppa/questa-mcp/actions/runs/42196936606) настоящий Wavepeek v3.2.0 успешно открыл VCD/FST, переданные через этот MCP-контракт. Это **внешнее подтверждение только тестового экземпляра**, не изменение обещаний MCP. Отсутствующие файлы и незавершённые фазы не получают `observed_in_run_id`.

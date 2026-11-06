@@ -338,8 +338,13 @@ def list_run_artifacts(project_id: str, run_id: str) -> dict[str, object]:
             expose_paths=profile.expose_artifact_paths,
         )
         for entry in manifest["items"]:
-            entry["origin"] = "OBSERVED_IN_RUN_DIRECTORY_NOT_VENDOR_ATTESTED"
-            entry["observed_in_run_id"] = run_id
+            observed = entry["state"] in {"HASHED", "HASH_SKIPPED_LARGE_FILE"}
+            entry["origin"] = (
+                "OBSERVED_IN_RUN_DIRECTORY_NOT_VENDOR_ATTESTED"
+                if observed else "NO_RUN_ASSOCIATION"
+            )
+            entry["observed_in_run_id"] = run_id if observed else None
+            entry["produced_by_run_id"] = None
         return {
             "project_id": project_id, "run_id": run_id, "eda_executed": False,
             "origin": "RUN_DIRECTORY_EXISTS_NOT_VENDOR_ATTESTED", **manifest,
@@ -436,6 +441,9 @@ async def _execute(
         if results_file is not None or seed is not None or artifact_dir is not None:
             # Программный ввод ограничен именами переменных из реализации.
             environment = os.environ.copy()
+            # Не наследовать потенциально опасные старые пути и seed из окружения.
+            for key in ("COCOTB_RESULTS_FILE", "QUESTA_MCP_SEED", "QUESTA_MCP_ARTIFACT_DIR"):
+                environment.pop(key, None)
             if results_file is not None:
                 environment["COCOTB_RESULTS_FILE"] = str(results_file)
             if seed is not None:
