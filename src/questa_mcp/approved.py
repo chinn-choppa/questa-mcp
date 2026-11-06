@@ -48,6 +48,8 @@ class ApprovedProject:
     executable_sha256: str | None = None
     artifact_specs: tuple[ArtifactSpec, ...] = ()
     expose_artifact_paths: bool = False
+    phase_scripts: tuple[tuple[str, Path, str], ...] = ()
+    regression_seeds: tuple[int, ...] = ()
 
 
 def _absolute_file(value: object) -> Path:
@@ -159,9 +161,39 @@ def _load_approved_profiles() -> dict[str, ApprovedProject]:
         reveal_paths = item.get("expose_artifact_paths", False)
         if not isinstance(reveal_paths, bool):
             raise ValueError("INVALID_ARTIFACT_PATH_DISCLOSURE")
+        # Только фиксированный набор DO-профилей, заранее утверждённых оператором.
+        phases_config = item.get("phase_scripts")
+        phase_scripts: tuple[tuple[str, Path, str], ...] = ()
+        regression_seeds: tuple[int, ...] = ()
+        if phases_config is not None:
+            if (not isinstance(phases_config, dict)
+                    or set(phases_config) != {"compile", "elaboration", "simulation"}
+                    or binary_digest is None):
+                raise ValueError("INVALID_PHASE_CONFIG")
+            ordered_phases: list[tuple[str, Path, str]] = []
+            for phase_name in ("compile", "elaboration", "simulation"):
+                phase = phases_config[phase_name]
+                if not isinstance(phase, dict) or set(phase) != {"do_script", "do_sha256"}:
+                    raise ValueError("INVALID_PHASE_CONFIG")
+                do_file = _approved_file(workspace, phase["do_script"])
+                do_digest = phase["do_sha256"]
+                if not isinstance(do_digest, str) or not _SHA256.fullmatch(do_digest):
+                    raise ValueError("INVALID_PHASE_HASH")
+                ordered_phases.append((phase_name, do_file, do_digest))
+            phase_scripts = tuple(ordered_phases)
+            seeds = item.get("regression_seeds", [0])
+            if (not isinstance(seeds, list) or not 1 <= len(seeds) <= 8
+                    or any(not isinstance(seed, int) or isinstance(seed, bool)
+                           or not 0 <= seed <= 2**32 - 1 for seed in seeds)
+                    or len(set(seeds)) != len(seeds)):
+                raise ValueError("INVALID_REGRESSION_SEEDS")
+            regression_seeds = tuple(seeds)
+        elif "regression_seeds" in item:
+            raise ValueError("PHASE_CONFIG_REQUIRED")
         profiles[key] = ApprovedProject(
             key, workspace, executable, script, digest, seconds, max_bytes, expose,
             checker_format, expected_tests, binary_digest, artifact_specs, reveal_paths,
+            phase_scripts, regression_seeds,
         )
     return profiles
 
@@ -275,7 +307,8 @@ async def _terminate_before_return(proc: asyncio.subprocess.Process) -> bool:
 
 
 async def _execute(
-    profile: ApprovedProject, *, results_file: Path | None = None
+    profile: ApprovedProject, *, results_file: Path | None = None,
+    seed: int | None = None,
 ) -> tuple[str, int | None, bytes]:
     """Снимать снимок DO в приватную папку, не передавать изменяемый исходник."""
     try:
@@ -297,10 +330,13 @@ async def _execute(
             if os.name == "nt" else {"start_new_session": True}
         )
         extra: dict[str, object] = {}
-        if results_file is not None:
-            # Новый пустой файл на каждый запуск; не принимать старый results.xml.
+        if results_file is not None or seed is not None:
+            # Программный ввод ограничен именами переменных из реализации.
             environment = os.environ.copy()
-            environment["COCOTB_RESULTS_FILE"] = str(results_file)
+            if results_file is not None:
+                environment["COCOTB_RESULTS_FILE"] = str(results_file)
+            if seed is not None:
+                environment["QUESTA_MCP_SEED"] = str(seed)
             extra["env"] = environment
         spawn = asyncio.create_task(
             asyncio.create_subprocess_exec(
