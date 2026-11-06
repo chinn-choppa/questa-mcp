@@ -27,3 +27,5 @@ The operator must explicitly attest to a disposable workspace and reviewed scrip
 ## #4 hardened boundary
 
 A private snapshot of the SHA-256 checked DO file prevents later edits to the original from silently changing the launched script. Referenced files remain mutable and the snapshot is not a user/OS permission boundary. `TERMINATION_UNCONFIRMED` requires manual inspection/cleanup, not automatic retries. A disposable workspace alone is not isolation.
+
+During MCP cancellation, cleanup now handles repeated cancellation and a pending process spawn without abandoning the subprocess before the temporary DO snapshot is removed. OS-level child-tree termination remains best-effort and requires independent acceptance; avoid claiming a complete sandbox or guaranteed descendant shutdown.

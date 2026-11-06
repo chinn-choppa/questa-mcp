@@ -20,3 +20,5 @@ Changes follow Keep a Changelog. Semantic Versioning is planned once the public 
 ### Experimental (#4)
 - Operator allowlist of trusted vsim/DO profiles, SHA-256 validation and bounded mock-tested subprocess execution.
 - No EDA product certification or proof of test PASS.
+
+- Protected child cleanup waits through repeated MCP cancellations and cancellation during subprocess spawn before removing the DO snapshot (mock tested).
