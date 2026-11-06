@@ -54,3 +54,7 @@ Questa/ModelSim `** Error (suppressible):` и `** Warning (suppressible):` ра�
 ## Read-only артефакты (#6)
 
 `list_approved_artifacts(project_id: str)` выбирает только разрешённый профиль и его список `artifacts` (не более 8). Без разрешения — `DENIED`/`NOT_CONFIGURED`; неверная конфигурация — `INVALID_CONFIGURATION`. Каждая запись содержит `id`, `format`, `declared_time_unit`, `time_unit_source`, `size_bytes`, `sha256` (если файл до 8 МиБ), `state`, `format_validated=false`, `origin=EXISTING_WORKSPACE_FILE_NOT_ATTESTED`, `produced_by_run_id=null`, `external_execution=NOT_RUN`, `paths_disclosed`, опциональный `local_path` и `routes`. Путь и содержимое клиент передавать не может. WLF требует отдельной конвертации, UCDB — vendor-native coverage. Подробности: [манифест](ARTIFACT_HANDOFF.md).
+
+## Артефакты запуска (#6)
+
+У `run_approved_project(project_id)` появился блок `run_artifacts`: `state`, `run_id`, `count`, `observed_count`, `items`, `retained` и `capture_mode`; идентификатор дублируется в `run_provenance.run_id`. При `capture_run_artifacts=true` сервер создаёт уникальный каталог `QUESTA_MCP_ARTIFACT_DIR` и собирает только разрешённые файлы; требуется `executable_sha256`. `observed_under_run_id` отражает наблюдение после завершения процесса; `produced_by_run_id=null`, `production_verified=false` **всегда**. Timeout, неподтверждённое завершение процесса и изменение бинарника не подтверждают связь. При `run_artifact_store` файлы сохраняются только по разрешению оператора. См. [подробный контракт](RUN_SCOPED_ARTIFACTS.md).

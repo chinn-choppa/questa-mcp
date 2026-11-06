@@ -43,3 +43,7 @@ When an operator-approved profile contains `executable_sha256` and `checker={"fo
 ## Read-only artifacts (#6)
 
 `list_approved_artifacts(project_id: str)` only selects the approved profile and its operator-defined list of up to 8 `artifacts`. No permission returns `DENIED`/`NOT_CONFIGURED`; invalid setup returns `INVALID_CONFIGURATION`. Each item contains `id`, `format`, `declared_time_unit`, `time_unit_source`, `size_bytes`, optional bounded `sha256`, `state`, `format_validated=false`, `origin=EXISTING_WORKSPACE_FILE_NOT_ATTESTED`, `produced_by_run_id=null`, `external_execution=NOT_RUN`, `paths_disclosed`, optional `local_path` and `routes`. No MCP-supplied file paths or contents. WLF needs independent vendor conversion; UCDB is vendor-native coverage. See [manifest contract](ARTIFACT_HANDOFF.en.md).
+
+## Run-scoped artifacts (#6)
+
+`run_approved_project(project_id)` adds `run_artifacts` with `state`, `run_id`, `count`, `observed_count`, `items`, `retained`, `capture_mode`; also `run_provenance.run_id`. With operator-enabled `capture_run_artifacts=true` and a pinned `executable_sha256`, each invocation gets an empty `QUESTA_MCP_ARTIFACT_DIR`, and only declared files are inspected. `observed_under_run_id` links an observation after a settled process; **`produced_by_run_id=null` and `production_verified=false` always**. Timeout, unconfirmed termination and modified binaries cannot establish a run association. `run_artifact_store` enables explicit operator-approved retention. See the [contract](RUN_SCOPED_ARTIFACTS.en.md).

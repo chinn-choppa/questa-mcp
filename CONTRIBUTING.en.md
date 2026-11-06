@@ -23,3 +23,6 @@ Any change to approved DO execution requires process-boundary, path, timeout, ou
 When changing the opt-in JUnit integration, keep `checker_verdict` separate from overall `test_verdict`. Exercise corrupted XML, wrong expected names, stale/symlinked artifacts, unexpected encodings, executable hash tampering, process failure and MCP calls on synthetic data. Update [JUnit contract](docs/JUNIT_EVIDENCE.en.md) and its Russian counterpart in the same PR.
 
 For #6 use public synthetic waveform/coverage artifacts only. Keep metadata separate from proof of waveform validity or run provenance. Never add caller-provided arbitrary paths, automatic downloads, WLF converter execution or duplicate third-party decoders. Update [handoff docs](docs/ARTIFACT_HANDOFF.en.md) and the Russian counterpart together.
+
+When updating run-scoped artifacts, maintain both [English](docs/RUN_SCOPED_ARTIFACTS.en.md) and [Russian](docs/RUN_SCOPED_ARTIFACTS.md) docs. Never elevate observation in a fresh directory to verified authorship or full PASS. Persistent stores must be operator-approved; tests must cover stale outputs, cancellation, errors, config, SHA-256 and default non-disclosure of paths.
+

@@ -24,3 +24,8 @@ The optional cocotb JUnit checker relies on `COCOTB_RESULTS_FILE`, a cocotb-defi
 ## External analyzer compatibility (#6)
 
 VCD/FST routes reflect documented Wavepeek and Tencent wave-mcp capabilities, **not an observed external invocation**. Native WLF is not considered directly supported; `wlf2vcd` is documented for specific older ModelSim versions but is not invoked here. UCDB requires vendor tooling. Windows/Linux CI validates metadata only, not installed external tool compatibility. See [manifest](ARTIFACT_HANDOFF.en.md).
+
+## Experimental run-scoped output (#6)
+
+Fresh temporary directories, operator-opt-in local retained storage, SHA-256 and MCP contracts are exercised with pure Python mocks on Windows and Linux. Edition-specific Siemens DO commands to write VCD/FST/WLF have **not been tested** in public CI. There is no storage quota, and metadata does not prove file validity or producer identity. See [details](RUN_SCOPED_ARTIFACTS.en.md).
+

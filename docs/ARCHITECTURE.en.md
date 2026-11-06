@@ -40,3 +40,7 @@ The implementation now contains an **experimental** opt-in approved-profile exec
 ## Metadata-only external artifact handoff (#6)
 
 `server.list_approved_artifacts` → `approved` (select fixed operator-defined IDs) → `artifact_handoff` (safe relative-path validation, metadata and size-bounded hashing). Wavepeek/wave-mcp consumer routes are returned as **descriptors only**, with no subprocess, network request or automatic export. WLF and UCDB are separate native formats; existing workspace files have unverified run provenance. See [handoff manifest](ARTIFACT_HANDOFF.en.md).
+
+## Run-scoped collection (#6)
+
+`run_approved_project` → fresh `run_id` + empty `QUESTA_MCP_ARTIFACT_DIR` → operator-reviewed `vsim -c -do` → inspect declared file metadata → delete temporary output **or** operator-approved retention under `run_artifact_store`. `produced_by_run_id=null` remains: the MCP has no OS process sandbox and cannot authenticate file authorship. The legacy `list_approved_artifacts` still describes unattested, pre-existing workspace data. See [run-scoped artifacts](RUN_SCOPED_ARTIFACTS.en.md).

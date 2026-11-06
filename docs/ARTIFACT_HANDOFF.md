@@ -39,3 +39,8 @@
 В публичном CI используются искусственные маленькие VCD и файлы-заглушки FST/WLF/UCDB. Проверяется **только манифест**: ограничения путей и размера, SHA-256, отсутствие утечек путей, типизация и реальный MCP tools/call. Заглушки **не** считаются валидными FST или WLF. Реальный Wavepeek/wave-mcp, конвертация WLF, анализ coverage и лицензируемая Questa: **NOT_RUN**.
 
 Референсы: [Wavepeek](https://github.com/kleverhq/wavepeek), [wave-mcp](https://github.com/Tencent/wave-mcp), [ModelSim Command Reference, wlf2vcd](https://ww1.microchip.com/downloads/aemdocuments/documents/fpga/ProductDocuments/ReleaseNotes/modelsim_me_v105c_ref.pdf).
+
+## Отдельный сбор свежих артефактов
+
+Приведённые выше `origin=EXISTING_WORKSPACE_FILE_NOT_ATTESTED` и `produced_by_run_id=null` относятся к read-only инструменту `list_approved_artifacts(project_id)`. Для **наблюдения файлов конкретного запуска** реализована отдельная опциональная функция внутри `run_approved_project`, см. [run-scoped артефакты](RUN_SCOPED_ARTIFACTS.md). Она не повышает наблюдение до подтверждения авторства либо PASS.
+

@@ -42,3 +42,8 @@ The #4 security regression suite additionally checks cancellation **during proce
 ## VCD/FST/WLF/UCDB manifests (#6)
 
 Synthetic VCD and placeholder FST/WLF/UCDB files test **metadata and routing only**. Tests cover workspace boundaries, symlinks, invalid extensions/paths, missing artifacts, SHA-256 for small files, skip-hash for large files and hidden local paths. Real MCP `tools/list`/`tools/call` reaches the new tool. Opening a real FST in Wavepeek, WLF conversion, UCDB coverage analysis and licensed Questa: `NOT_RUN`.
+
+## Run-scoped artifact isolation tests (#6)
+
+A mocked vendor process receives a new directory through an environment variable, writes a synthetic VCD, and the MCP returns only metadata and `observed_under_run_id`. Negative tests cover pre-existing workspace artifacts, unique identifiers across runs, temporary cleanup, explicit retention and path disclosure, unsafe storage, mandatory binary SHA-256, timeout, binary changes, and a real MCP `tools/call` with a mock vsim. Licensed Siemens Questa is **NOT_RUN**. See [contract](RUN_SCOPED_ARTIFACTS.en.md).
+

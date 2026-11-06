@@ -34,3 +34,11 @@ Changes follow Keep a Changelog. Semantic Versioning is planned once the public 
 - Explicit external consumer routes and native WLF/UCDB limitations, without analyzer execution, automatic conversion or uploads.
 - Synthetic security and real MCP contract tests on Windows/Linux.
 
+
+### Experimental run-scoped artifacts (#6)
+
+- Fresh `QUESTA_MCP_ARTIFACT_DIR` and unique `run_id` for each approved execution.
+- Distinct `observed_under_run_id` observations without falsely setting `produced_by_run_id`.
+- Temporary output by default, optional operator-controlled persistent storage.
+- Stale-artifact, incomplete-process, executable-tampering, MCP and unit regression tests.
+

@@ -29,3 +29,8 @@ No synthetic test is allowed to claim a real PASS, regardless of metadata provid
 ## Local cocotb checker from approved runner
 
 A new **operator-authorized local runtime** can now capture a fresh cocotb JUnit report, independently from the untrusted `assess_verification_run` tool. This marks self-checking cocotb results as `checker_verdict=PASS` if all expected tests executed and the process/parsed transcript are clean. No overall `test_verdict=PASS` is issued: independent SystemVerilog assertions and the phase/regression transitions still require evidence. See [JUnit evidence](JUNIT_EVIDENCE.en.md). The generic `assess_verification_run` remains `CALLER_SUPPLIED_UNVERIFIED`.
+
+## Linking output observations to the local run
+
+The local `run_approved_project` can now return `run_artifacts.run_id` and metadata observed in a new per-run directory. This is stronger **observation-time provenance** than an existing workspace file, but it does not authenticate which process wrote it. Overall `test_verdict=PASS` and independent SVA success are still not inferred. See [run-scoped contract](RUN_SCOPED_ARTIFACTS.en.md).
+

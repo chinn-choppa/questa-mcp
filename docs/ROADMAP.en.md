@@ -36,3 +36,11 @@ The read-only MCP tools `assess_verification_run(record)` and `assess_regression
 - [ ] Actual external Wavepeek/wave-mcp handoff with public VCD/FST and vendor-edition acceptance: `NOT_RUN`.
 - [ ] Associate artifacts with a unique observed execution: `NOT_IMPLEMENTED`; existing workspace files remain unattested.
 
+
+## New #6 milestone: per-run identifiers
+
+- [x] A unique empty artifact directory per approved run, `run_id` and `QUESTA_MCP_ARTIFACT_DIR`.
+- [x] Pinned `executable_sha256`, bounded metadata inspection, stale/timeout/binary-tampering negative tests.
+- [x] Retention only under operator-approved `run_artifact_store`; temporary private output by default.
+- [ ] Proving Siemens authored an artifact, real Wavepeek/wave-mcp execution and independent SVA: **NOT_RUN / NOT_IMPLEMENTED**.
+

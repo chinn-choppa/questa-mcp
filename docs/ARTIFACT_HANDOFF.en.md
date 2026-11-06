@@ -39,3 +39,8 @@ By default the MCP response **does not disclose absolute paths**. Only a human o
 Public CI uses a small synthetic VCD and placeholder FST/WLF/UCDB files. It verifies **only the manifest**: path restrictions, size/hash bounds, privacy, typed routes and real MCP tools/call. The placeholders are **not valid FST/WLF** evidence. Running actual Wavepeek/wave-mcp, converting WLF, interpreting coverage or executing licensed Questa remains **NOT_RUN**.
 
 References: [Wavepeek](https://github.com/kleverhq/wavepeek), [wave-mcp](https://github.com/Tencent/wave-mcp), [ModelSim Command Reference, wlf2vcd](https://ww1.microchip.com/downloads/aemdocuments/documents/fpga/ProductDocuments/ReleaseNotes/modelsim_me_v105c_ref.pdf).
+
+## Separate per-run artifact capture
+
+The `origin=EXISTING_WORKSPACE_FILE_NOT_ATTESTED` and `produced_by_run_id=null` fields above describe the read-only `list_approved_artifacts(project_id)` tool. A distinct opt-in collector inside `run_approved_project` can **observe artifacts in a fresh run-scoped directory**, as documented in [run-scoped artifacts](RUN_SCOPED_ARTIFACTS.en.md). Observation still does not authenticate the producer or establish verification PASS.
+

@@ -37,3 +37,7 @@ During MCP cancellation, cleanup now handles repeated cancellation and a pending
 ## Waveform/coverage metadata (#6)
 
 Only operator-declared relative artifacts may be read; MCP callers cannot supply arbitrary paths. No file contents are returned, at most 8 MiB per artifact is read for SHA-256 and large files are not hashed. Absolute paths are hidden unless the operator explicitly enables `expose_artifact_paths`, which may disclose infrastructure locations to a remote AI client. Symlink/workspace checks are portable best-effort **not a defense against same-user races or an OS sandbox**. No Wavepeek, wave-mcp or vendor converter is invoked. See [artifact threat model](docs/ARTIFACT_HANDOFF.en.md).
+
+## Per-invocation artifact directories (#6)
+
+Capture requires an operator-configured `capture_run_artifacts=true`, approved filenames and pinned `executable_sha256`. The fresh `QUESTA_MCP_ARTIFACT_DIR` is selected by the server, never by an MCP caller. Durable `run_artifact_store` storage is separately operator-approved, **never automatically deleted** and has **no server-enforced disk quota**. The run association is only a file observation, not proof of which process wrote it; a Tcl script or other same-user process can modify artifacts. OS isolation is still required. See the [threat boundary](docs/RUN_SCOPED_ARTIFACTS.en.md).

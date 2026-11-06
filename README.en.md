@@ -71,3 +71,7 @@ Approved local DO profiles may enable `checker.format="cocotb-junit-v1"`, an exa
 ## Read-only artifact handoff (#6)
 
 `list_approved_artifacts(project_id)` returns metadata for **operator-allowlisted** VCD/FST/WLF/UCDB files: format, size, bounded SHA-256, possible external consumers and provenance limits. Paths are hidden by default, contents never returned, and no conversion/upload/external executable is invoked. An existing workspace file is **not proof of production by the current run**. See [safe artifact handoff](docs/ARTIFACT_HANDOFF.en.md).
+
+## Run-scoped output capture (#6)
+
+With `capture_run_artifacts=true`, each operator-approved `run_approved_project` invocation creates a **fresh empty directory** passed through `QUESTA_MCP_ARTIFACT_DIR`. The result includes `run_artifacts.run_id`, bounded hashes and `observed_under_run_id`. Directories are deleted by default; optional `run_artifact_store` retention and absolute-path disclosure require **operator approval**. File existence alone never proves simulator authorship, full PASS, file-format validity or independent SVA success. See the [run-scoped contract](docs/RUN_SCOPED_ARTIFACTS.en.md).
