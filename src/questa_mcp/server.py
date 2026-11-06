@@ -4,7 +4,11 @@ from __future__ import annotations
 
 from typing import Literal
 
-from .approved import list_approved_projects as approved_list, run_approved_project as approved_run
+from .approved import (
+    list_approved_artifacts as artifacts_list,
+    list_approved_projects as approved_list,
+    run_approved_project as approved_run,
+)
 
 from mcp.server import MCPServer
 
@@ -30,7 +34,8 @@ def create_server() -> MCPServer:
             "stage": "bootstrap",
             "operations": ["server_info", "tool_status", "parse_diagnostics",
                            "list_approved_projects", "run_approved_project",
-                           "assess_verification_run", "assess_regression"],
+                           "assess_verification_run", "assess_regression",
+                           "list_approved_artifacts"],
             "eda_execution_supported": enabled,
         }
 
@@ -50,6 +55,11 @@ def create_server() -> MCPServer:
     def list_approved_projects() -> dict[str, object]:
         """Перечислить разрешённые IDs без путей и DO-содержимого."""
         return approved_list()
+
+    @server.tool()
+    def list_approved_artifacts(project_id: str) -> dict[str, object]:
+        """Выдать только metadata разрешённых VCD/FST/WLF/UCDB без загрузок."""
+        return artifacts_list(project_id)
 
     @server.tool()
     async def run_approved_project(project_id: str) -> dict[str, object]:

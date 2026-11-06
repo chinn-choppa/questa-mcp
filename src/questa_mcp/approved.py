@@ -14,6 +14,7 @@ import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
+from .artifact_handoff import ArtifactSpec, inspect_approved_artifacts, validate_artifact_specs
 from .diagnostics import parse_diagnostics_text
 from .junit_evidence import MAX_TESTS, analyze_junit_bytes, read_junit_artifact
 
@@ -45,6 +46,8 @@ class ApprovedProject:
     checker_format: str | None = None
     expected_tests: tuple[str, ...] = ()
     executable_sha256: str | None = None
+    artifact_specs: tuple[ArtifactSpec, ...] = ()
+    expose_artifact_paths: bool = False
 
 
 def _absolute_file(value: object) -> Path:
@@ -152,9 +155,13 @@ def _load_approved_profiles() -> dict[str, ApprovedProject]:
             raise ValueError("INVALID_EXECUTABLE_HASH")
         if checker_format and binary_digest is None:
             raise ValueError("EXECUTABLE_HASH_REQUIRED")
+        artifact_specs = validate_artifact_specs(item.get("artifacts"))
+        reveal_paths = item.get("expose_artifact_paths", False)
+        if not isinstance(reveal_paths, bool):
+            raise ValueError("INVALID_ARTIFACT_PATH_DISCLOSURE")
         profiles[key] = ApprovedProject(
             key, workspace, executable, script, digest, seconds, max_bytes, expose,
-            checker_format, expected_tests, binary_digest,
+            checker_format, expected_tests, binary_digest, artifact_specs, reveal_paths,
         )
     return profiles
 
@@ -222,6 +229,29 @@ async def _kill_tree(proc: asyncio.subprocess.Process) -> bool:
     except asyncio.TimeoutError:
         return False
     return tree_signalled and proc.returncode is not None
+
+
+
+
+def list_approved_artifacts(project_id: str) -> dict[str, object]:
+    """Только оператором разрешённые файлы; без произвольных путей от MCP."""
+    if not isinstance(project_id, str) or not _ID.fullmatch(project_id):
+        return {"state": "DENIED", "items": [], "eda_executed": False}
+    if not os.getenv(CONFIG_ENV):
+        return {"state": "NOT_CONFIGURED", "items": [], "eda_executed": False}
+    try:
+        profile = _load_approved_profiles().get(project_id)
+        if profile is None:
+            return {"state": "DENIED", "items": [], "eda_executed": False}
+        if not profile.artifact_specs:
+            return {"state": "NOT_CONFIGURED", "items": [], "eda_executed": False}
+        manifest = inspect_approved_artifacts(
+            profile.workspace, profile.artifact_specs,
+            expose_paths=profile.expose_artifact_paths,
+        )
+        return {"project_id": project_id, "eda_executed": False, **manifest}
+    except (OSError, ValueError, json.JSONDecodeError):
+        return {"state": "INVALID_CONFIGURATION", "items": [], "eda_executed": False}
 
 
 async def _await_protected(task: asyncio.Task) -> object:
