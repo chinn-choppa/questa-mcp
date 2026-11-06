@@ -37,3 +37,7 @@ During MCP cancellation, cleanup now handles repeated cancellation and a pending
 ## Waveform/coverage metadata (#6)
 
 Only operator-declared relative artifacts may be read; MCP callers cannot supply arbitrary paths. No file contents are returned, at most 8 MiB per artifact is read for SHA-256 and large files are not hashed. Absolute paths are hidden unless the operator explicitly enables `expose_artifact_paths`, which may disclose infrastructure locations to a remote AI client. Symlink/workspace checks are portable best-effort **not a defense against same-user races or an OS sandbox**. No Wavepeek, wave-mcp or vendor converter is invoked. See [artifact threat model](docs/ARTIFACT_HANDOFF.en.md).
+
+## Approved multi-phase execution security
+
+The new MCP operation accepts no caller-supplied command, DO path or seed; all values are fixed in operator-local config. All three DO scripts and the executable must match SHA-256. Approved Tcl still runs as the current OS user and requires isolation. `QUESTA_MCP_SEED` is an environment variable, **not proof of simulator seed consumption**. See [phase-runner contract](docs/PHASE_RUNNER.en.md).

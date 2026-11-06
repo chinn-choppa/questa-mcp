@@ -42,3 +42,7 @@ The #4 security regression suite additionally checks cancellation **during proce
 ## VCD/FST/WLF/UCDB manifests (#6)
 
 Synthetic VCD and placeholder FST/WLF/UCDB files test **metadata and routing only**. Tests cover workspace boundaries, symlinks, invalid extensions/paths, missing artifacts, SHA-256 for small files, skip-hash for large files and hidden local paths. Real MCP `tools/list`/`tools/call` reaches the new tool. Opening a real FST in Wavepeek, WLF conversion, UCDB coverage analysis and licensed Questa: `NOT_RUN`.
+
+## Approved phase regressions (#5)
+
+Unit/mock and real in-process MCP tests check the ordered three phases, seeds, compile/elaboration failure short-circuit, no false PASS, invalid/duplicate seeds, executable hash mismatch and missing profiles. All EDA subprocesses are synthetic mocks. Actual licensed Questa remains `NOT_RUN`. See [phase-runner tests](PHASE_RUNNER.en.md).

@@ -40,3 +40,7 @@ The implementation now contains an **experimental** opt-in approved-profile exec
 ## Metadata-only external artifact handoff (#6)
 
 `server.list_approved_artifacts` → `approved` (select fixed operator-defined IDs) → `artifact_handoff` (safe relative-path validation, metadata and size-bounded hashing). Wavepeek/wave-mcp consumer routes are returned as **descriptors only**, with no subprocess, network request or automatic export. WLF and UCDB are separate native formats; existing workspace files have unverified run provenance. See [handoff manifest](ARTIFACT_HANDOFF.en.md).
+
+## Phase execution architecture
+
+`server.run_approved_regression` → `phase_runner.run_approved_regression` → `_load_approved_profiles` → three fixed SHA-256-checked DO scripts → `_execute` with independent observed states → optional fresh cocotb JUnit. A failed phase stops subsequent phases of that seed without hiding other runs. No positive flow asserts overall PASS without trustworthy assertion evidence. See [phase runner](PHASE_RUNNER.en.md).

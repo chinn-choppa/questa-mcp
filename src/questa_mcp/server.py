@@ -15,6 +15,7 @@ from mcp.server import MCPServer
 from . import __version__
 from .diagnostics import parse_diagnostics_text
 from .runtime import inspect_tool
+from .phase_runner import run_approved_regression as approved_regression
 from .verification import assess_run, assess_regression as summarize_regression
 
 
@@ -35,7 +36,7 @@ def create_server() -> MCPServer:
             "operations": ["server_info", "tool_status", "parse_diagnostics",
                            "list_approved_projects", "run_approved_project",
                            "assess_verification_run", "assess_regression",
-                           "list_approved_artifacts"],
+                           "list_approved_artifacts", "run_approved_regression"],
             "eda_execution_supported": enabled,
         }
 
@@ -69,6 +70,17 @@ def create_server() -> MCPServer:
         running_projects.add(project_id)
         try:
             return await approved_run(project_id)
+        finally:
+            running_projects.discard(project_id)
+
+    @server.tool()
+    async def run_approved_regression(project_id: str) -> dict[str, object]:
+        """Запустить фиксированные три фазы и seed из локального профиля."""
+        if project_id in running_projects:
+            return {"status": "BUSY", "regression_verdict": "UNKNOWN", "runs": []}
+        running_projects.add(project_id)
+        try:
+            return await approved_regression(project_id)
         finally:
             running_projects.discard(project_id)
 
