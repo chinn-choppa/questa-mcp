@@ -215,6 +215,45 @@ class FreshArtifactCaptureTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result["run_artifacts"]["state"], "NOT_CONFIGURED")
         self.assertIsNone(result["run_artifacts"]["run_id"])
 
+
+    async def test_inherited_environment_cannot_redirect_capture(self):
+        with patch.dict(os.environ, {
+            "QUESTA_MCP_ARTIFACT_DIR": str(self.workspace),
+            "COCOTB_RESULTS_FILE": str(self.workspace / "old.xml"),
+        }):
+            # Профиль без checker не должен наследовать чужой results.xml.
+            result, output = await self._run()
+        self.assertEqual(result["run_artifacts"]["observed_count"], 1)
+        self.assertFalse(output.exists())
+
+    async def test_timed_out_process_does_not_claim_run_association(self):
+        from unittest.mock import AsyncMock
+        async def fake_execute(profile, *, results_file=None, artifact_dir=None):
+            wave = artifact_dir / "waves" / "clock.vcd"
+            wave.parent.mkdir()
+            wave.write_bytes(VCD)
+            return "TIMEOUT", -9, b""
+        with patch("questa_mcp.approved._execute", side_effect=fake_execute):
+            result = await run_approved_project("smoke")
+        self.assertEqual(result["status"], "TIMEOUT")
+        self.assertEqual(result["run_artifacts"]["observed_count"], 0)
+        self.assertIsNone(result["run_artifacts"]["items"][0]["observed_under_run_id"])
+
+    async def test_binary_mutated_during_run_revokes_artifact_association(self):
+        async def spawn(*args, **kwargs):
+            root = Path(kwargs["env"]["QUESTA_MCP_ARTIFACT_DIR"])
+            (root / "waves").mkdir()
+            (root / "waves" / "clock.vcd").write_bytes(VCD)
+            self.binary.write_bytes(b"binary replaced")
+            return FakeProcess()
+        with patch("questa_mcp.approved.asyncio.create_subprocess_exec", side_effect=spawn):
+            result = await run_approved_project("smoke")
+        self.assertEqual(result["status"], "EXECUTABLE_CHANGED")
+        self.assertEqual(result["run_artifacts"]["state"], "BINARY_INTEGRITY_FAILED")
+        self.assertEqual(result["run_artifacts"]["observed_count"], 0)
+        self.assertIsNone(result["run_artifacts"]["items"][0]["observed_under_run_id"])
+        self.assertEqual(result["test_verdict"], "UNKNOWN")
+
     async def test_true_mcp_tool_call_links_observation_not_production(self):
         async def spawn(*args, **kwargs):
             root = Path(kwargs["env"]["QUESTA_MCP_ARTIFACT_DIR"])

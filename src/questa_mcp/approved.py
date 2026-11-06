@@ -384,6 +384,10 @@ async def _execute(
         extra: dict[str, object] = {}
         if results_file is not None or artifact_dir is not None:
             environment = os.environ.copy()
+            # Не позволять унаследованным переменным перенаправить результаты
+            # за пределы выделенного для этого вызова каталога.
+            environment.pop("COCOTB_RESULTS_FILE", None)
+            environment.pop("QUESTA_MCP_ARTIFACT_DIR", None)
             if results_file is not None:
                 # Новый пустой файл на каждый запуск; не принимать старый results.xml.
                 environment["COCOTB_RESULTS_FILE"] = str(results_file)
@@ -479,11 +483,9 @@ async def run_approved_project(project_id: str) -> dict[str, object]:
                     checker.update(state="UNKNOWN", reason=read_state)
                 else:
                     checker = analyze_junit_bytes(content, profile.expected_tests)
-            spawn_started = status not in {
-                "TOOL_UNAVAILABLE", "DO_HASH_MISMATCH", "SCRIPT_TOO_LARGE", "INVALID_SCRIPT"
-            }
+            spawn_settled = status in {"COMPLETED_UNVERIFIED", "PROCESS_FAILED"}
             artifacts = _fresh_artifact_manifest(
-                run_root, run_id, retained, profile, process_started=spawn_started,
+                run_root, run_id, retained, profile, process_started=spawn_settled,
             )
 
     log_decoded_without_loss = True
@@ -513,6 +515,12 @@ async def run_approved_project(project_id: str) -> dict[str, object]:
             binary_unchanged = False
         if not binary_unchanged:
             status = "EXECUTABLE_CHANGED"
+            # Наблюдение файла остаётся, но связь с одобренным бинарником недоказана.
+            artifacts["state"] = "BINARY_INTEGRITY_FAILED"
+            artifacts["observed_count"] = 0
+            for item in artifacts["items"]:
+                item["observed_under_run_id"] = None
+                item["origin"] = "NO_RUN_ASSOCIATION"
     fail_process = status in {"PROCESS_FAILED", "LICENSE_ERROR_EVIDENCE"}
     fail_diagnostic = parsed["test_verdict"] == "FAIL"
     fail_checks = checker["state"] == "FAILED"
