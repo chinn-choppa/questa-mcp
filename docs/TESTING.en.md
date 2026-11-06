@@ -28,3 +28,5 @@ When implementing #4, add mock-process, cancellation, timeout, symlink traversal
 ## Mock executor tests (#4)
 
 Public CI additionally verifies denied/unconfigured profiles, changed DO hashes, traversal/symlink rejection, `shell=False` semantics, a fake process, timeout, output limit, error and license-text evidence. These are synthetic mock-process tests, **not licensed Questa runs**.
+
+The #4 security regression suite additionally checks cancellation **during process spawn** and repeated cancellation while child cleanup is pending. The temporary DO snapshot must remain available until cleanup is complete. These are mock-process tests; real Windows/Linux vendor descendant shutdown remains NOT_RUN.

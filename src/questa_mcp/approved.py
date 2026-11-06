@@ -182,6 +182,26 @@ async def _kill_tree(proc: asyncio.subprocess.Process) -> bool:
     return tree_signalled and proc.returncode is not None
 
 
+async def _await_protected(task: asyncio.Task) -> object:
+    """Дождаться завершения дочерней задачи при повторных cancel() родителя."""
+    current = asyncio.current_task()
+    while True:
+        try:
+            return await asyncio.shield(task)
+        except asyncio.CancelledError:
+            if task.done():
+                return task.result()
+            if current is not None:
+                # Только для ожидания cleanup; внешнее исключение повторно выдаётся вызывающим.
+                current.uncancel()
+
+
+async def _terminate_before_return(proc: asyncio.subprocess.Process) -> bool:
+    """Не удалять DO snapshot до завершения операции очистки."""
+    task = asyncio.create_task(_kill_tree(proc))
+    return bool(await _await_protected(task))
+
+
 async def _execute(profile: ApprovedProject) -> tuple[str, int | None, bytes]:
     """Снимать снимок DO в приватную папку, не передавать изменяемый исходник."""
     try:
@@ -202,8 +222,8 @@ async def _execute(profile: ApprovedProject) -> tuple[str, int | None, bytes]:
             {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP}
             if os.name == "nt" else {"start_new_session": True}
         )
-        try:
-            proc = await asyncio.create_subprocess_exec(
+        spawn = asyncio.create_task(
+            asyncio.create_subprocess_exec(
                 str(profile.executable), "-c", "-do", str(staged),
                 cwd=str(profile.workspace),
                 stdin=asyncio.subprocess.DEVNULL,
@@ -211,8 +231,19 @@ async def _execute(profile: ApprovedProject) -> tuple[str, int | None, bytes]:
                 stderr=asyncio.subprocess.STDOUT,
                 **kwargs,
             )
+        )
+        try:
+            proc = await asyncio.shield(spawn)
         except OSError:
             return "TOOL_UNAVAILABLE", None, b""
+        except asyncio.CancelledError:
+            # Отмена во время spawn не должна оставлять процесс без владельца.
+            try:
+                spawned = await _await_protected(spawn)
+            except OSError:
+                raise
+            await _terminate_before_return(spawned)
+            raise
 
         data = bytearray()
         try:
@@ -233,10 +264,10 @@ async def _execute(profile: ApprovedProject) -> tuple[str, int | None, bytes]:
             return ("TIMEOUT" if confirmed else "TERMINATION_UNCONFIRMED",
                     proc.returncode, bytes(data))
         except asyncio.CancelledError:
-            await asyncio.shield(_kill_tree(proc))
+            await _terminate_before_return(proc)
             raise
         except BaseException:
-            await asyncio.shield(_kill_tree(proc))
+            await _terminate_before_return(proc)
             raise
 
 
