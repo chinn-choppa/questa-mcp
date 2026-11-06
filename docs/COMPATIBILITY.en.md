@@ -23,7 +23,7 @@ The optional cocotb JUnit checker relies on `COCOTB_RESULTS_FILE`, a cocotb-defi
 
 ## External analyzer compatibility (#6)
 
-VCD/FST routes reflect documented Wavepeek and Tencent wave-mcp capabilities, **not an observed external invocation**. Native WLF is not considered directly supported; `wlf2vcd` is documented for specific older ModelSim versions but is not invoked here. UCDB requires vendor tooling. Windows/Linux CI validates metadata only, not installed external tool compatibility. See [manifest](ARTIFACT_HANDOFF.en.md).
+Public VCD/FST were **tested with real Wavepeek 3.2.0 on Linux**: [CI](https://github.com/chinn-choppa/questa-mcp/actions/runs/42195636610), using mocked EDA and open-source `vcd2fst`. `wave-mcp` remains documentation-only and **NOT_RUN**. Native WLF is not considered directly supported; `wlf2vcd` is documented for specific older ModelSim versions but is not invoked here. UCDB requires vendor tooling. Windows/Linux CI validates metadata; a separate Linux CI additionally runs Wavepeek CLI but not licensed Siemens Questa. See [manifest](ARTIFACT_HANDOFF.en.md).
 
 ## Experimental run-scoped output (#6)
 

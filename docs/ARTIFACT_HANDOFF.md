@@ -36,7 +36,7 @@
 
 ## Проверки
 
-В публичном CI используются искусственные маленькие VCD и файлы-заглушки FST/WLF/UCDB. Проверяется **только манифест**: ограничения путей и размера, SHA-256, отсутствие утечек путей, типизация и реальный MCP tools/call. Заглушки **не** считаются валидными FST или WLF. Реальный Wavepeek/wave-mcp, конвертация WLF, анализ coverage и лицензируемая Questa: **NOT_RUN**.
+В публичном CI используются искусственные маленькие VCD и файлы-заглушки FST/WLF/UCDB. Проверяется **только манифест**: ограничения путей и размера, SHA-256, отсутствие утечек путей, типизация и реальный MCP tools/call. Заглушки **не** считаются валидными FST или WLF. В отдельном Linux CI **реальный Wavepeek 3.2.0** открыл VCD и конвертированный через GTKWave FST после передачи локального пути из результата mock-run: [проверка](https://github.com/chinn-choppa/questa-mcp/actions/runs/42195636610). `wave-mcp`, конвертация WLF, анализ UCDB и лицензируемая Questa: **NOT_RUN**.
 
 Референсы: [Wavepeek](https://github.com/kleverhq/wavepeek), [wave-mcp](https://github.com/Tencent/wave-mcp), [ModelSim Command Reference, wlf2vcd](https://ww1.microchip.com/downloads/aemdocuments/documents/fpga/ProductDocuments/ReleaseNotes/modelsim_me_v105c_ref.pdf).
 

@@ -14,6 +14,7 @@ Review licenses and provide attribution before incorporating any external source
 
 - [cocotb](https://github.com/cocotb/cocotb): external JUnit XML report format and `COCOTB_RESULTS_FILE` documented interface, BSD-3-Clause project; no cocotb code bundled or dependency required by the MCP server. Tests use original synthetic XML.
 
-- [Wavepeek](https://github.com/kleverhq/wavepeek) (Apache-2.0) and [Tencent wave-mcp](https://github.com/Tencent/wave-mcp) (Apache-2.0): only documented VCD/FST/FSDB support is used to describe external routes; no code is copied or integrated.
+- [Wavepeek](https://github.com/kleverhq/wavepeek) (Apache-2.0): the official **v3.2.0** binary is downloaded by Linux CI, SHA-256 `8dc788e7c8b065fc422e5274e54d9466ace52ed748c673f54d9b7aedb9b5b711`; **not bundled** with the repository. [Tencent wave-mcp](https://github.com/Tencent/wave-mcp) (Apache-2.0): documented consumer route only, **NOT_RUN**.
+- [GTKWave vcd2fst](https://gtkwave.github.io/gtkwave/man/vcd2fst.1.html): open-source VCD→FST converter installed in a **separate Linux CI job**, never used at MCP runtime or bundled.
 - [ModelSim wlf2vcd](https://ww1.microchip.com/downloads/aemdocuments/documents/fpga/ProductDocuments/ReleaseNotes/modelsim_me_v105c_ref.pdf): specific vendor-edition reference only; the converter is never invoked.
 

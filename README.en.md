@@ -75,3 +75,7 @@ Approved local DO profiles may enable `checker.format="cocotb-junit-v1"`, an exa
 ## Run-scoped output capture (#6)
 
 With `capture_run_artifacts=true`, each operator-approved `run_approved_project` invocation creates a **fresh empty directory** passed through `QUESTA_MCP_ARTIFACT_DIR`. The result includes `run_artifacts.run_id`, bounded hashes and `observed_under_run_id`. Directories are deleted by default; optional `run_artifact_store` retention and absolute-path disclosure require **operator approval**. File existence alone never proves simulator authorship, full PASS, file-format validity or independent SVA success. See the [run-scoped contract](docs/RUN_SCOPED_ARTIFACTS.en.md).
+
+## Verified external waveform reader
+
+A separate Linux CI runs **real Wavepeek v3.2.0** on public VCD and FST saved from mocked approved runs: [evidence](https://github.com/chinn-choppa/questa-mcp/actions/runs/42195636610). The valid FST is converted using open-source `vcd2fst`. Licensed Siemens Questa, external `wave-mcp` and WLF/UCDB remain `NOT_RUN`. The MCP server never downloads or launches Wavepeek at runtime.

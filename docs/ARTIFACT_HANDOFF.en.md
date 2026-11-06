@@ -36,7 +36,7 @@ By default the MCP response **does not disclose absolute paths**. Only a human o
 
 ## Acceptance evidence
 
-Public CI uses a small synthetic VCD and placeholder FST/WLF/UCDB files. It verifies **only the manifest**: path restrictions, size/hash bounds, privacy, typed routes and real MCP tools/call. The placeholders are **not valid FST/WLF** evidence. Running actual Wavepeek/wave-mcp, converting WLF, interpreting coverage or executing licensed Questa remains **NOT_RUN**.
+Public CI uses a small synthetic VCD and placeholder FST/WLF/UCDB files. It verifies **only the manifest**: path restrictions, size/hash bounds, privacy, typed routes and real MCP tools/call. The placeholders are **not valid FST/WLF** evidence. A separate Linux CI executes **real Wavepeek 3.2.0** on the VCD and GTKWave-converted FST from mock-run retained output: [integration test](https://github.com/chinn-choppa/questa-mcp/actions/runs/42195636610). Actual `wave-mcp`, vendor WLF conversion, UCDB coverage analysis and licensed Questa remain **NOT_RUN**.
 
 References: [Wavepeek](https://github.com/kleverhq/wavepeek), [wave-mcp](https://github.com/Tencent/wave-mcp), [ModelSim Command Reference, wlf2vcd](https://ww1.microchip.com/downloads/aemdocuments/documents/fpga/ProductDocuments/ReleaseNotes/modelsim_me_v105c_ref.pdf).
 

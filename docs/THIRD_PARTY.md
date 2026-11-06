@@ -15,6 +15,7 @@
 
 - [cocotb](https://github.com/cocotb/cocotb): использован публичный формат JUnit XML и документированная переменная `COCOTB_RESULTS_FILE`, проект BSD-3-Clause. Код cocotb не копируется и пакет не требуется для самого MCP-сервера; тесты используют оригинальный синтетический XML.
 
-- [Wavepeek](https://github.com/kleverhq/wavepeek) (Apache-2.0) и [Tencent wave-mcp](https://github.com/Tencent/wave-mcp) (Apache-2.0): использованы только сведения о поддержке VCD/FST/FSDB и внешних маршрутах; код и анализаторы не копируются/не встраиваются.
+- [Wavepeek](https://github.com/kleverhq/wavepeek) (Apache-2.0): в Linux CI запускается официальный релиз **v3.2.0** из GitHub Releases, SHA-256 `8dc788e7c8b065fc422e5274e54d9466ace52ed748c673f54d9b7aedb9b5b711`; бинарник **не включён** в репозиторий. [Tencent wave-mcp](https://github.com/Tencent/wave-mcp) (Apache-2.0): только документированный маршрут, вызов **NOT_RUN**.
+- [GTKWave vcd2fst](https://gtkwave.github.io/gtkwave/man/vcd2fst.1.html): открытый конвертер VCD→FST устанавливается в **отдельном Linux CI**, не используется во время выполнения MCP и не распространяется в составе проекта.
 - [ModelSim wlf2vcd](https://ww1.microchip.com/downloads/aemdocuments/documents/fpga/ProductDocuments/ReleaseNotes/modelsim_me_v105c_ref.pdf): ссылка на руководство отдельной редакции; команда не вызывается.
 

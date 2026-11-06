@@ -33,8 +33,9 @@ The read-only MCP tools `assess_verification_run(record)` and `assess_regression
 
 - [x] Read-only operator-allowlisted VCD/FST/WLF/UCDB manifests with bounded SHA-256 and private paths by default.
 - [x] Separate Wavepeek/wave-mcp routes, manual WLF conversion and native UCDB coverage descriptions.
-- [ ] Actual external Wavepeek/wave-mcp handoff with public VCD/FST and vendor-edition acceptance: `NOT_RUN`.
-- [ ] Associate artifacts with a unique observed execution: `NOT_IMPLEMENTED`; existing workspace files remain unattested.
+- [x] Real **Wavepeek 3.2.0 on Linux** opened public VCD/FST from mock-run retained output: [CI](https://github.com/chinn-choppa/questa-mcp/actions/runs/42195636610).
+- [ ] Actual `wave-mcp`, licensed vendor/edition acceptance and WLF/UCDB: `NOT_RUN`.
+- [x] Associate observations from a fresh directory with a unique mock-run `run_id`; file authorship remains unproven.
 
 
 ## New #6 milestone: per-run identifiers
@@ -42,5 +43,5 @@ The read-only MCP tools `assess_verification_run(record)` and `assess_regression
 - [x] A unique empty artifact directory per approved run, `run_id` and `QUESTA_MCP_ARTIFACT_DIR`.
 - [x] Pinned `executable_sha256`, bounded metadata inspection, stale/timeout/binary-tampering negative tests.
 - [x] Retention only under operator-approved `run_artifact_store`; temporary private output by default.
-- [ ] Proving Siemens authored an artifact, real Wavepeek/wave-mcp execution and independent SVA: **NOT_RUN / NOT_IMPLEMENTED**.
+- [ ] Licensed Siemens author evidence, real `wave-mcp`, WLF/UCDB and independent SVA: **NOT_RUN / NOT_IMPLEMENTED**.
 

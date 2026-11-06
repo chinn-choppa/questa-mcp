@@ -42,3 +42,7 @@ Changes follow Keep a Changelog. Semantic Versioning is planned once the public 
 - Temporary output by default, optional operator-controlled persistent storage.
 - Stale-artifact, incomplete-process, executable-tampering, MCP and unit regression tests.
 
+
+### Wavepeek integration smoke (#6)
+- Linux CI checksum-verifies Wavepeek v3.2.0 and reads public VCD plus `vcd2fst`-generated FST.
+- Paths originate from opt-in retained mock-run manifests; licensed Siemens EDA remains `NOT_RUN`.

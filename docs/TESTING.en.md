@@ -41,7 +41,7 @@ The #4 security regression suite additionally checks cancellation **during proce
 
 ## VCD/FST/WLF/UCDB manifests (#6)
 
-Synthetic VCD and placeholder FST/WLF/UCDB files test **metadata and routing only**. Tests cover workspace boundaries, symlinks, invalid extensions/paths, missing artifacts, SHA-256 for small files, skip-hash for large files and hidden local paths. Real MCP `tools/list`/`tools/call` reaches the new tool. Opening a real FST in Wavepeek, WLF conversion, UCDB coverage analysis and licensed Questa: `NOT_RUN`.
+Synthetic VCD and placeholder FST/WLF/UCDB files test **metadata and routing only**. Tests cover workspace boundaries, symlinks, invalid extensions/paths, missing artifacts, SHA-256 for small files, skip-hash for large files and hidden local paths. Real MCP `tools/list`/`tools/call` reaches the new tool. A separate [Wavepeek VCD/FST CI](https://github.com/chinn-choppa/questa-mcp/actions/runs/42195636610) confirmed actual Wavepeek queries on public VCD/FST; FST is produced by open-source `vcd2fst` in a Linux runner. WLF conversion, UCDB coverage, `wave-mcp` and licensed Questa: `NOT_RUN`.
 
 ## Run-scoped artifact isolation tests (#6)
 
