@@ -29,4 +29,8 @@ When implementing #4, add mock-process, cancellation, timeout, symlink traversal
 
 Public CI additionally verifies denied/unconfigured profiles, changed DO hashes, traversal/symlink rejection, `shell=False` semantics, a fake process, timeout, output limit, error and license-text evidence. These are synthetic mock-process tests, **not licensed Questa runs**.
 
+## Conservative verification phases (#5)
+
+The read-only MCP tools `assess_verification_run(record)` and `assess_regression(runs)` track compile, elaboration, simulation, checker and regression independently. Caller-supplied positive claims are **UNVERIFIED**, never PASS. See [verification contract](VERIFICATION.en.md). Live Siemens EDA **NOT_RUN**.
+
 The #4 security regression suite additionally checks cancellation **during process spawn** and repeated cancellation while child cleanup is pending. The temporary DO snapshot must remain available until cleanup is complete. These are mock-process tests; real Windows/Linux vendor descendant shutdown remains NOT_RUN.

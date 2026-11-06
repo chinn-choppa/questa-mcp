@@ -11,6 +11,7 @@ from mcp.server import MCPServer
 from . import __version__
 from .diagnostics import parse_diagnostics_text
 from .runtime import inspect_tool
+from .verification import assess_run, assess_regression as summarize_regression
 
 
 def create_server() -> MCPServer:
@@ -28,7 +29,8 @@ def create_server() -> MCPServer:
             "vendor_tool": "vsim",
             "stage": "bootstrap",
             "operations": ["server_info", "tool_status", "parse_diagnostics",
-                           "list_approved_projects", "run_approved_project"],
+                           "list_approved_projects", "run_approved_project",
+                           "assess_verification_run", "assess_regression"],
             "eda_execution_supported": enabled,
         }
 
@@ -59,6 +61,16 @@ def create_server() -> MCPServer:
             return await approved_run(project_id)
         finally:
             running_projects.discard(project_id)
+
+    @server.tool()
+    def assess_verification_run(record: dict[str, object]) -> dict[str, object]:
+        """Разобрать данные о фазах; клиентские свидетельства никогда не дают PASS."""
+        return assess_run(record)
+
+    @server.tool()
+    def assess_regression(runs: list[dict[str, object]]) -> dict[str, object]:
+        """Агрегировать фазовые результаты без повышения недоверенного PASS."""
+        return summarize_regression(runs)
 
     return server
 

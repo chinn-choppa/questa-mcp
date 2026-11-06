@@ -41,4 +41,8 @@
 
 Исполнитель использует зафиксированный временный снимок DO, а не исходный файл после проверки SHA-256. `TERMINATION_UNCONFIRMED` — остановка дерева процессов не подтверждена; повторный запуск без осмотра запрещён. `DO_HASH_MISMATCH` и `INVALID_SCRIPT` не запускают EDA и имеют `eda_executed=false`.
 
+## Фазовая модель верификации (#5)
+
+Инструменты `assess_verification_run(record)` и `assess_regression(runs)` разделяют компиляцию, элаборацию, симуляцию, проверки и регрессии. Положительные заявления клиента **не повышаются до PASS**. См. [контракт верификации](VERIFICATION.md). Реальный Siemens EDA: **NOT_RUN**.
+
 Questa/ModelSim `** Error (suppressible):` и `** Warning (suppressible):` распознаются; записи содержат `qualifier="suppressible"` или `null`. Пометка suppressible **не переводит ошибку в успех**.

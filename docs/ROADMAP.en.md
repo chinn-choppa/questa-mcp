@@ -21,3 +21,7 @@ No stage should equate process exit 0 with self-checking test success.
 
 - [x] #4 initial explicit allowlist and mock-verified, bounded DO runner (not an OS sandbox).
 - [ ] #4 real licensed simulator and OS process-tree acceptance: NOT_RUN.
+
+## Conservative verification phases (#5)
+
+The read-only MCP tools `assess_verification_run(record)` and `assess_regression(runs)` track compile, elaboration, simulation, checker and regression independently. Caller-supplied positive claims are **UNVERIFIED**, never PASS. See [verification contract](VERIFICATION.en.md). Live Siemens EDA **NOT_RUN**.
