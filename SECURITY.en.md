@@ -8,7 +8,7 @@ Do not publish working exploits, tokens, private RTL or licensed data in public 
 
 ## Threat model
 
-MCP inputs are untrusted, even when the transport is local. The current tools only inspect simulator availability and parse caller-supplied bounded text. There are **no vendor process launches, project file reads, network listeners, or automatic uploads**.
+MCP inputs are untrusted, even when the transport is local. By default tools only discover an installed simulator, parse bounded caller-supplied text, and analyze phase reports. An **explicit operator-approved profile** additionally enables local vsim execution of a pre-approved DO snapshot. There are no network listeners or automatic uploads. The server reads the approved DO, not RTL project source files.
 
 - Tool discovery does not reveal the local executable path, license variables or environment.
 - Parsing does not open filenames appearing in the transcript. Input is capped at 1 MiB; output at 200 diagnostics.
@@ -19,3 +19,13 @@ MCP inputs are untrusted, even when the transport is local. The current tools on
 Future #4 process execution needs a separate threat-model review, administrator-managed allowlists, canonical paths, symlink/path traversal defense, no `shell=True`, controlled subprocess trees, explicit resource limits, and opt-in artifact output. **Even an allowlisted DO script can execute Tcl with the user's permissions**; only deliberately trusted scripts can be enabled.
 
 No product/OS combination has yet been validated with a live licensed Questa run.
+
+## Approved DO scripts
+
+The operator must explicitly attest to a disposable workspace and reviewed script hash. **DO is executable Tcl and can escape the workspace.** This project is not an OS sandbox; use a separate restricted account or VM. Raw diagnostic disclosure is opt-in. See [Approved projects](docs/APPROVED_PROJECTS.en.md).
+
+## #4 hardened boundary
+
+A private snapshot of the SHA-256 checked DO file prevents later edits to the original from silently changing the launched script. Referenced files remain mutable and the snapshot is not a user/OS permission boundary. `TERMINATION_UNCONFIRMED` requires manual inspection/cleanup, not automatic retries. A disposable workspace alone is not isolation.
+
+During MCP cancellation, cleanup now handles repeated cancellation and a pending process spawn without abandoning the subprocess before the temporary DO snapshot is removed. OS-level child-tree termination remains best-effort and requires independent acceptance; avoid claiming a complete sandbox or guaranteed descendant shutdown.

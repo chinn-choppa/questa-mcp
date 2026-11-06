@@ -1,8 +1,10 @@
-"""Локальный read-only MCP поверх stdio; исполнение EDA пока запрещено."""
+"""Локальный MCP со строго разрешённым экспериментальным исполнителем DO."""
 
 from __future__ import annotations
 
 from typing import Literal
+
+from .approved import list_approved_projects as approved_list, run_approved_project as approved_run
 
 from mcp.server import MCPServer
 
@@ -14,17 +16,20 @@ from .runtime import inspect_tool
 def create_server() -> MCPServer:
     """Создать MCP-сервер с ограниченными и типизированными инструментами."""
     server = MCPServer("questa-mcp")
+    running_projects: set[str] = set()
 
     @server.tool()
     def server_info() -> dict[str, object]:
         """Показать возможности, не выполняя Questa/ModelSim."""
+        enabled = approved_list()["state"] == "CONFIGURED"
         return {
             "server": "questa-mcp",
             "version": __version__,
             "vendor_tool": "vsim",
             "stage": "bootstrap",
-            "operations": ["server_info", "tool_status", "parse_diagnostics"],
-            "eda_execution_supported": False,
+            "operations": ["server_info", "tool_status", "parse_diagnostics",
+                           "list_approved_projects", "run_approved_project"],
+            "eda_execution_supported": enabled,
         }
 
     @server.tool()
@@ -38,6 +43,22 @@ def create_server() -> MCPServer:
     ) -> dict[str, object]:
         """Разобрать текстовый журнал; без подтверждения PASS."""
         return parse_diagnostics_text(text, tool, limit)
+
+    @server.tool()
+    def list_approved_projects() -> dict[str, object]:
+        """Перечислить разрешённые IDs без путей и DO-содержимого."""
+        return approved_list()
+
+    @server.tool()
+    async def run_approved_project(project_id: str) -> dict[str, object]:
+        """Запустить только заранее разрешённый DO-профиль, без Tcl аргументов."""
+        if project_id in running_projects:
+            return {"status": "BUSY", "test_verdict": "UNKNOWN", "eda_executed": False}
+        running_projects.add(project_id)
+        try:
+            return await approved_run(project_id)
+        finally:
+            running_projects.discard(project_id)
 
     return server
 

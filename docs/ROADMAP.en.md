@@ -18,3 +18,6 @@
 - [ ] Real licensed Questa/ModelSim and Python 3.15 acceptance: **NOT_RUN** until evidenced.
 
 No stage should equate process exit 0 with self-checking test success.
+
+- [x] #4 initial explicit allowlist and mock-verified, bounded DO runner (not an OS sandbox).
+- [ ] #4 real licensed simulator and OS process-tree acceptance: NOT_RUN.

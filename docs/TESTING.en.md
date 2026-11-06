@@ -24,3 +24,9 @@ The first verified branch run: [GitHub Actions 42054703978](https://github.com/c
 | WLF/coverage or waveform handoff | NOT_RUN |
 
 When implementing #4, add mock-process, cancellation, timeout, symlink traversal, license-unavailable and permissions tests before running real EDA. Do not publish commercial logs or internal RTL.
+
+## Mock executor tests (#4)
+
+Public CI additionally verifies denied/unconfigured profiles, changed DO hashes, traversal/symlink rejection, `shell=False` semantics, a fake process, timeout, output limit, error and license-text evidence. These are synthetic mock-process tests, **not licensed Questa runs**.
+
+The #4 security regression suite additionally checks cancellation **during process spawn** and repeated cancellation while child cleanup is pending. The temporary DO snapshot must remain available until cleanup is complete. These are mock-process tests; real Windows/Linux vendor descendant shutdown remains NOT_RUN.
