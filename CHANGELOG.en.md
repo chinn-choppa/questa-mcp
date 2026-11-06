@@ -26,3 +26,5 @@ Changes follow Keep a Changelog. Semantic Versioning is planned once the public 
 - Expected testcase and suite-count reconciliation, reject skipped/duplicate/missing/unsafe artifacts
 - Separate `checker_verdict=PASS` from overall verification `test_verdict=UNKNOWN`; negative evidence is retained
 - Synthetic mock subprocess and real MCP tools/call contract tests; no licensed Siemens validation
+
+- Protected child cleanup waits through repeated MCP cancellations and cancellation during subprocess spawn before removing the DO snapshot (mock tested).

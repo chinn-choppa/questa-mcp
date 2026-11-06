@@ -50,3 +50,7 @@ The server reads a size-bounded DO file, checks the operator-approved SHA-256, a
 ## Optional cocotb JUnit profile
 
 The local manifest can additionally specify `executable_sha256` and `checker: {"format":"cocotb-junit-v1","expected_tests":["check_counter"]}`. The hash is **required** when the checker is enabled. A fresh per-run `COCOTB_RESULTS_FILE` is read with 128 KiB and 256-test limits. A consistent self-checking result may set `checker_verdict=PASS`, but never asserts a full test/regression PASS. Changed executables return `EXECUTABLE_HASH_MISMATCH` before spawn or `EXECUTABLE_CHANGED` after spawn. Full details: [JUnit evidence](JUNIT_EVIDENCE.en.md).
+
+## Cancellation lifecycle
+
+Cancellation during or after process creation now waits for the protected child cleanup task **before deleting the temporary approved DO snapshot**, including repeated cancellations. This prevents early deletion of the script while cleanup is still running; **it does not prove that all grandchildren have exited** if OS-level process-tree termination fails. The configured execution timeout currently covers the running/reading phase **after process spawn**, not the initial OS spawn latency. A restricted VM/account is still required.

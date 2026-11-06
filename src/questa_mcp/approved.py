@@ -224,6 +224,26 @@ async def _kill_tree(proc: asyncio.subprocess.Process) -> bool:
     return tree_signalled and proc.returncode is not None
 
 
+async def _await_protected(task: asyncio.Task) -> object:
+    """Дождаться завершения дочерней задачи при повторных cancel() родителя."""
+    current = asyncio.current_task()
+    while True:
+        try:
+            return await asyncio.shield(task)
+        except asyncio.CancelledError:
+            if task.done():
+                return task.result()
+            if current is not None:
+                # Только для ожидания cleanup; внешнее исключение повторно выдаётся вызывающим.
+                current.uncancel()
+
+
+async def _terminate_before_return(proc: asyncio.subprocess.Process) -> bool:
+    """Не удалять DO snapshot до завершения операции очистки."""
+    task = asyncio.create_task(_kill_tree(proc))
+    return bool(await _await_protected(task))
+
+
 async def _execute(
     profile: ApprovedProject, *, results_file: Path | None = None
 ) -> tuple[str, int | None, bytes]:
@@ -246,14 +266,14 @@ async def _execute(
             {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP}
             if os.name == "nt" else {"start_new_session": True}
         )
-        try:
-            extra: dict[str, object] = {}
-            if results_file is not None:
-                # Новый пустой файл на каждый запуск; не принимать старый results.xml.
-                environment = os.environ.copy()
-                environment["COCOTB_RESULTS_FILE"] = str(results_file)
-                extra["env"] = environment
-            proc = await asyncio.create_subprocess_exec(
+        extra: dict[str, object] = {}
+        if results_file is not None:
+            # Новый пустой файл на каждый запуск; не принимать старый results.xml.
+            environment = os.environ.copy()
+            environment["COCOTB_RESULTS_FILE"] = str(results_file)
+            extra["env"] = environment
+        spawn = asyncio.create_task(
+            asyncio.create_subprocess_exec(
                 str(profile.executable), "-c", "-do", str(staged),
                 cwd=str(profile.workspace),
                 stdin=asyncio.subprocess.DEVNULL,
@@ -261,8 +281,15 @@ async def _execute(
                 stderr=asyncio.subprocess.STDOUT,
                 **kwargs, **extra,
             )
+        )
+        try:
+            proc = await asyncio.shield(spawn)
         except OSError:
             return "TOOL_UNAVAILABLE", None, b""
+        except asyncio.CancelledError:
+            spawned = await _await_protected(spawn)
+            await _terminate_before_return(spawned)
+            raise
 
         data = bytearray()
         try:
@@ -283,10 +310,10 @@ async def _execute(
             return ("TIMEOUT" if confirmed else "TERMINATION_UNCONFIRMED",
                     proc.returncode, bytes(data))
         except asyncio.CancelledError:
-            await asyncio.shield(_kill_tree(proc))
+            await _terminate_before_return(proc)
             raise
         except BaseException:
-            await asyncio.shield(_kill_tree(proc))
+            await _terminate_before_return(proc)
             raise
 
 

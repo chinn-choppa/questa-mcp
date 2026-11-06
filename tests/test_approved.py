@@ -228,5 +228,71 @@ class ApprovedProjectsTests(unittest.IsolatedAsyncioTestCase):
             kill.assert_awaited_once()
 
 
+    async def test_repeated_cancellation_waits_for_cleanup_before_snapshot_removed(self):
+        class Hanging:
+            async def read(self, _):
+                await asyncio.Event().wait()
+
+        fake = FakeProcess(b"")
+        fake.stdout = Hanging()
+        cleanup_started = asyncio.Event()
+        release_cleanup = asyncio.Event()
+        staged_paths = []
+
+        async def spawn(*args, **kwargs):
+            staged_paths.append(Path(args[3]))
+            return fake
+
+        async def slow_kill(_):
+            self.assertTrue(staged_paths[0].is_file())
+            cleanup_started.set()
+            await release_cleanup.wait()
+            self.assertTrue(staged_paths[0].is_file())
+            return True
+
+        with patch(
+            "questa_mcp.approved.asyncio.create_subprocess_exec", side_effect=spawn
+        ), patch("questa_mcp.approved._kill_tree", side_effect=slow_kill) as kill:
+            task = asyncio.create_task(run_approved_project("smoke"))
+            await asyncio.sleep(0.01)
+            task.cancel()
+            await asyncio.wait_for(cleanup_started.wait(), timeout=2)
+            self.assertFalse(task.done())
+            task.cancel()
+            self.assertFalse(task.done())
+            release_cleanup.set()
+            with self.assertRaises(asyncio.CancelledError):
+                await asyncio.wait_for(task, timeout=2)
+            kill.assert_awaited_once()
+            self.assertFalse(staged_paths[0].exists())
+
+    async def test_cancel_during_spawn_reaps_resulting_process(self):
+        spawn_started = asyncio.Event()
+        release_spawn = asyncio.Event()
+        observed_path = []
+
+        async def delayed_spawn(*args, **kwargs):
+            observed_path.append(Path(args[3]))
+            spawn_started.set()
+            await release_spawn.wait()
+            return FakeProcess(b"")
+
+        async def kill_after_spawn(_):
+            self.assertTrue(observed_path[0].exists())
+            return True
+
+        with patch(
+            "questa_mcp.approved.asyncio.create_subprocess_exec", side_effect=delayed_spawn
+        ), patch("questa_mcp.approved._kill_tree", side_effect=kill_after_spawn) as kill:
+            task = asyncio.create_task(run_approved_project("smoke"))
+            await asyncio.wait_for(spawn_started.wait(), timeout=2)
+            task.cancel()
+            release_spawn.set()
+            with self.assertRaises(asyncio.CancelledError):
+                await asyncio.wait_for(task, timeout=2)
+            kill.assert_awaited_once()
+            self.assertFalse(observed_path[0].exists())
+
+
 if __name__ == "__main__":
     unittest.main()

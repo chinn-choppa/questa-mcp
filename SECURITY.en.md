@@ -31,3 +31,5 @@ A private snapshot of the SHA-256 checked DO file prevents later edits to the or
 ## Fresh JUnit collection (experimental)
 
 The checker-enabled profile requires a pinned SHA-256 of the executable, checked before and after the local run. The generated XML is accepted only from a new private location; symlinks, DTD/entities and inconsistent counts are rejected. Failure to decode a transcript losslessly or parse it fully blocks any positive checker result. This is not cryptographic attestation of the vendor or an OS sandbox: an approved Tcl script, or another process with equivalent OS rights, may still falsify XML. No raw JUnit report is returned to the MCP client; see [threat boundary](docs/JUNIT_EVIDENCE.en.md).
+
+During MCP cancellation, cleanup now handles repeated cancellation and a pending process spawn without abandoning the subprocess before the temporary DO snapshot is removed. OS-level child-tree termination remains best-effort and requires independent acceptance; avoid claiming a complete sandbox or guaranteed descendant shutdown.
