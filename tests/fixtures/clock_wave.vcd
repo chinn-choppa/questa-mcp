@@ -1,0 +1,19 @@
+$date
+  Synthetic public testcase for questa-mcp
+$end
+$version
+  questa-mcp unit fixture
+$end
+$timescale 1ns $end
+$scope module tb $end
+$var wire 1 ! clk $end
+$upscope $end
+$enddefinitions $end
+#0
+0!
+#5
+1!
+#10
+0!
+#15
+1!

@@ -1,0 +1,49 @@
+name: Wavepeek VCD integration
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  public-vcd-handoff:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.13'
+      - uses: astral-sh/setup-uv@v7
+      - name: Resolve isolated Python environment
+        shell: bash
+        run: uv sync --python 3.13
+      - name: Download and checksum-verify pinned Wavepeek v3.2.0
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/wavepeek-v3.2.0.tar.gz"
+          curl --proto '=https' --tlsv1.2 --fail --location --retry 2 \
+            --output "$archive" \
+            "https://github.com/kleverhq/wavepeek/releases/download/v3.2.0/wavepeek-x86_64-unknown-linux-gnu.tar.gz"
+          echo "8dc788e7c8b065fc422e5274e54d9466ace52ed748c673f54d9b7aedb9b5b711  $archive" | sha256sum -c -
+          mkdir -p "$RUNNER_TEMP/wavepeek-v3.2.0"
+          tar -xzf "$archive" -C "$RUNNER_TEMP/wavepeek-v3.2.0"
+          tool="$(find "$RUNNER_TEMP/wavepeek-v3.2.0" -type f -name wavepeek -print -quit)"
+          test -n "$tool"
+          chmod +x "$tool"
+          "$tool" --version
+          echo "WAVEPEEK_BIN=$tool" >> "$GITHUB_ENV"
+      - name: Verify public VCD from actual Wavepeek CLI with mocked Questa
+        shell: bash
+        run: |
+          uv run --no-sync python tests/integration/wavepeek_handoff_smoke.py "$WAVEPEEK_BIN"
+      - name: State commercial and native waveform boundary
+        shell: bash
+        run: |
+          echo "QUESTA_EDA=NOT_RUN (Siemens license not required)"
+          echo "WAVEPEEK_FST=NOT_RUN (no valid FST fixture)"
+          echo "WLF_CONVERSION=NOT_RUN (vendor converter not invoked)"
