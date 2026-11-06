@@ -28,3 +28,11 @@ The read-only MCP tools `assess_verification_run(record)` and `assess_regression
 
 - [x] #5: add fresh cocotb JUnit checker and pinned local binary hash in an opt-in approved DO profile, covered by mock MCP calls
 - [ ] #5: actual Siemens/version-specific run, trusted compilation/elaboration and native SVA evidence, full regression PASS — NOT_RUN / NOT_IMPLEMENTED
+
+## Initial #6 milestone
+
+- [x] Read-only operator-allowlisted VCD/FST/WLF/UCDB manifests with bounded SHA-256 and private paths by default.
+- [x] Separate Wavepeek/wave-mcp routes, manual WLF conversion and native UCDB coverage descriptions.
+- [ ] Actual external Wavepeek/wave-mcp handoff with public VCD/FST and vendor-edition acceptance: `NOT_RUN`.
+- [ ] Associate artifacts with a unique observed execution: `NOT_IMPLEMENTED`; existing workspace files remain unattested.
+

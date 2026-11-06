@@ -14,3 +14,7 @@
 - [setup-uv](https://github.com/astral-sh/setup-uv): действие CI, тег v7.
 
 - [cocotb](https://github.com/cocotb/cocotb): использован публичный формат JUnit XML и документированная переменная `COCOTB_RESULTS_FILE`, проект BSD-3-Clause. Код cocotb не копируется и пакет не требуется для самого MCP-сервера; тесты используют оригинальный синтетический XML.
+
+- [Wavepeek](https://github.com/kleverhq/wavepeek) (Apache-2.0) и [Tencent wave-mcp](https://github.com/Tencent/wave-mcp) (Apache-2.0): использованы только сведения о поддержке VCD/FST/FSDB и внешних маршрутах; код и анализаторы не копируются/не встраиваются.
+- [ModelSim wlf2vcd](https://ww1.microchip.com/downloads/aemdocuments/documents/fpga/ProductDocuments/ReleaseNotes/modelsim_me_v105c_ref.pdf): ссылка на руководство отдельной редакции; команда не вызывается.
+

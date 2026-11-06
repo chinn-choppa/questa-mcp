@@ -18,7 +18,8 @@ class MCPContractTests(unittest.IsolatedAsyncioTestCase):
             names = {item.name for item in listed.tools}
             self.assertEqual(names, {"server_info", "tool_status", "parse_diagnostics",
                              "list_approved_projects", "run_approved_project",
-                             "assess_verification_run", "assess_regression"})
+                             "assess_verification_run", "assess_regression",
+                             "list_approved_artifacts"})
             info = await client.call_tool("server_info", {})
             self.assertFalse(info.is_error)
             self.assertFalse(info.structured_content["eda_execution_supported"])
@@ -47,6 +48,10 @@ class MCPContractTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(phases.structured_content["test_verdict"], "UNKNOWN")
             invalid = await client.call_tool("assess_regression", {"runs": [{}]})
             self.assertTrue(invalid.is_error)
+            absent = await client.call_tool("list_approved_artifacts", {"project_id": "missing"})
+            self.assertFalse(absent.is_error)
+            self.assertEqual(absent.structured_content["items"], [])
+            self.assertFalse(absent.structured_content["eda_executed"])
             rejected = await client.call_tool("parse_diagnostics", {
                 "text": "none", "limit": 0,
             })

@@ -20,3 +20,7 @@ For Questa 2025.2+, cocotb documents a distinct QIS/Qrun path alongside the lega
 Opt-in approved DO execution is implemented with mock subprocesses but **not tested against real Siemens products**; neither command-line compatibility nor process-tree teardown has vendor-level acceptance yet.
 
 The optional cocotb JUnit checker relies on `COCOTB_RESULTS_FILE`, a cocotb-defined environment variable; actual DO scripts and vendor editions have **NOT_RUN** acceptance. Its binary hash pin verifies the locally approved file's content, **not** Siemens authenticity, product licensing or OS sandboxing. Independent vendor SVA/coverage success is not inferred from cocotb's JUnit XML. See [JUnit collector](JUNIT_EVIDENCE.en.md).
+
+## External analyzer compatibility (#6)
+
+VCD/FST routes reflect documented Wavepeek and Tencent wave-mcp capabilities, **not an observed external invocation**. Native WLF is not considered directly supported; `wlf2vcd` is documented for specific older ModelSim versions but is not invoked here. UCDB requires vendor tooling. Windows/Linux CI validates metadata only, not installed external tool compatibility. See [manifest](ARTIFACT_HANDOFF.en.md).
