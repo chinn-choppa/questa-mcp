@@ -8,12 +8,14 @@ import json
 import os
 import re
 import signal
+import stat
 import subprocess
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
 from .diagnostics import parse_diagnostics_text
+from .junit_evidence import MAX_TESTS, analyze_junit_bytes, read_junit_artifact
 
 CONFIG_ENV = "QUESTA_MCP_PROJECTS_CONFIG"
 MAX_CONFIG_BYTES = 65_536
@@ -21,6 +23,7 @@ MAX_DO_BYTES = 131_072
 MAX_OUTPUT_BYTES = 262_144
 _ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$")
 _SHA256 = re.compile(r"^[a-f0-9]{64}$")
+_CASE_ID = re.compile(r"^[A-Za-z0-9_.-]{1,128}$")
 _LICENSE = re.compile(
     r"license (?:check\s*out|checkout) failed|"
     r"(?:unable|cannot|failed) to (?:check\s*out|obtain) .*?license|"
@@ -39,6 +42,9 @@ class ApprovedProject:
     timeout_seconds: int
     max_output_bytes: int
     expose_diagnostics: bool
+    checker_format: str | None = None
+    expected_tests: tuple[str, ...] = ()
+    executable_sha256: str | None = None
 
 
 def _absolute_file(value: object) -> Path:
@@ -48,6 +54,19 @@ def _absolute_file(value: object) -> Path:
     if not p.is_absolute() or p.is_symlink() or not p.is_file():
         raise ValueError("INVALID_PATH")
     return p.resolve(strict=True)
+
+
+def _hash_executable(path: Path) -> str:
+    """Хешировать binary потоково, без следования конечным ссылкам."""
+    flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
+    descriptor = os.open(path, flags)
+    with os.fdopen(descriptor, "rb") as handle:
+        if not stat.S_ISREG(os.fstat(handle.fileno()).st_mode):
+            raise ValueError("EXECUTABLE_NOT_REGULAR")
+        digest = hashlib.sha256()
+        while data := handle.read(1024 * 1024):
+            digest.update(data)
+    return digest.hexdigest()
 
 
 def _approved_file(root: Path, relative: object) -> Path:
@@ -111,8 +130,31 @@ def _load_approved_profiles() -> dict[str, ApprovedProject]:
             raise ValueError("INVALID_OUTPUT_LIMIT")
         if not isinstance(expose, bool):
             raise ValueError("INVALID_DISCLOSURE_SETTING")
+        checker = item.get("checker")
+        checker_format: str | None = None
+        expected_tests: tuple[str, ...] = ()
+        if checker is not None:
+            if not isinstance(checker, dict) or set(checker) != {"format", "expected_tests"}:
+                raise ValueError("INVALID_CHECKER_CONFIG")
+            if checker["format"] != "cocotb-junit-v1":
+                raise ValueError("UNSUPPORTED_CHECKER")
+            names = checker["expected_tests"]
+            if (not isinstance(names, list) or not 1 <= len(names) <= MAX_TESTS
+                    or any(not isinstance(x, str) or not _CASE_ID.fullmatch(x) for x in names)
+                    or len(set(names)) != len(names)):
+                raise ValueError("INVALID_EXPECTED_TESTS")
+            checker_format = "cocotb-junit-v1"
+            expected_tests = tuple(names)
+        binary_digest = item.get("executable_sha256")
+        if binary_digest is not None and (
+            not isinstance(binary_digest, str) or not _SHA256.fullmatch(binary_digest)
+        ):
+            raise ValueError("INVALID_EXECUTABLE_HASH")
+        if checker_format and binary_digest is None:
+            raise ValueError("EXECUTABLE_HASH_REQUIRED")
         profiles[key] = ApprovedProject(
-            key, workspace, executable, script, digest, seconds, max_bytes, expose
+            key, workspace, executable, script, digest, seconds, max_bytes, expose,
+            checker_format, expected_tests, binary_digest,
         )
     return profiles
 
@@ -202,7 +244,9 @@ async def _terminate_before_return(proc: asyncio.subprocess.Process) -> bool:
     return bool(await _await_protected(task))
 
 
-async def _execute(profile: ApprovedProject) -> tuple[str, int | None, bytes]:
+async def _execute(
+    profile: ApprovedProject, *, results_file: Path | None = None
+) -> tuple[str, int | None, bytes]:
     """Снимать снимок DO в приватную папку, не передавать изменяемый исходник."""
     try:
         snapshot = _verified_do_bytes(profile)
@@ -222,6 +266,12 @@ async def _execute(profile: ApprovedProject) -> tuple[str, int | None, bytes]:
             {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP}
             if os.name == "nt" else {"start_new_session": True}
         )
+        extra: dict[str, object] = {}
+        if results_file is not None:
+            # Новый пустой файл на каждый запуск; не принимать старый results.xml.
+            environment = os.environ.copy()
+            environment["COCOTB_RESULTS_FILE"] = str(results_file)
+            extra["env"] = environment
         spawn = asyncio.create_task(
             asyncio.create_subprocess_exec(
                 str(profile.executable), "-c", "-do", str(staged),
@@ -229,7 +279,7 @@ async def _execute(profile: ApprovedProject) -> tuple[str, int | None, bytes]:
                 stdin=asyncio.subprocess.DEVNULL,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.STDOUT,
-                **kwargs,
+                **kwargs, **extra,
             )
         )
         try:
@@ -237,11 +287,7 @@ async def _execute(profile: ApprovedProject) -> tuple[str, int | None, bytes]:
         except OSError:
             return "TOOL_UNAVAILABLE", None, b""
         except asyncio.CancelledError:
-            # Отмена во время spawn не должна оставлять процесс без владельца.
-            try:
-                spawned = await _await_protected(spawn)
-            except OSError:
-                raise
+            spawned = await _await_protected(spawn)
             await _terminate_before_return(spawned)
             raise
 
@@ -285,20 +331,109 @@ async def run_approved_project(project_id: str) -> dict[str, object]:
     except (OSError, ValueError, json.JSONDecodeError):
         return {"status": "INVALID_CONFIGURATION", "test_verdict": "UNKNOWN", "eda_executed": False}
 
-    status, code, log = await _execute(profile)
+    # Для аттестации checker необходимо заранее закрепить конкретный binary.
+    if profile.executable_sha256 is not None:
+        try:
+            if _hash_executable(profile.executable) != profile.executable_sha256:
+                return {"status": "EXECUTABLE_HASH_MISMATCH",
+                        "test_verdict": "UNKNOWN", "eda_executed": False}
+        except (OSError, ValueError):
+            return {"status": "EXECUTABLE_UNVERIFIED",
+                    "test_verdict": "UNKNOWN", "eda_executed": False}
+
+    # Один приватный каталог и новый путь результата для каждого выполнения.
+    with tempfile.TemporaryDirectory(prefix="questa-mcp-checks-") as artifact_dir:
+        report_path = Path(artifact_dir) / "results.xml"
+        status, code, log = await _execute(
+            profile, results_file=report_path if profile.checker_format else None
+        )
+        checker: dict[str, object] = {
+            "format": profile.checker_format, "state": "NOT_CONFIGURED",
+            "reason": "CHECKER_NOT_CONFIGURED", "tests": 0,
+            "failures": 0, "errors": 0, "skipped": 0,
+            "expected_tests": len(profile.expected_tests), "report_sha256": None,
+        }
+        if profile.checker_format is not None:
+            content, read_state = read_junit_artifact(report_path)
+            if content is None:
+                checker.update(state="UNKNOWN", reason=read_state)
+            else:
+                checker = analyze_junit_bytes(content, profile.expected_tests)
+
+    log_decoded_without_loss = True
     try:
-        parsed = parse_diagnostics_text(log.decode("utf-8", errors="replace"))
+        decoded = log.decode("utf-8")
+    except UnicodeDecodeError:
+        decoded = log.decode("utf-8", errors="replace")
+        log_decoded_without_loss = False
+    parse_complete = True
+    try:
+        parsed = parse_diagnostics_text(decoded)
     except ValueError:
-        parsed = {"test_verdict": "UNKNOWN", "count": 0, "items": []}
-    if status in {"PROCESS_FAILED", "COMPLETED_UNVERIFIED"} and _LICENSE.search(log.decode("utf-8", errors="replace")):
+        parse_complete = False
+        parsed = {"test_verdict": "UNKNOWN", "failure_evidence_count": 0,
+                  "count": 0, "items": []}
+    if status in {"PROCESS_FAILED", "COMPLETED_UNVERIFIED"} and _LICENSE.search(decoded):
         status = "LICENSE_ERROR_EVIDENCE"
+    started = status not in {"TOOL_UNAVAILABLE", "DO_HASH_MISMATCH",
+                             "SCRIPT_TOO_LARGE", "INVALID_SCRIPT"}
+    binary_unchanged = True
+    if started and profile.executable_sha256 is not None:
+        try:
+            binary_unchanged = (
+                _hash_executable(profile.executable) == profile.executable_sha256
+            )
+        except (OSError, ValueError):
+            binary_unchanged = False
+        if not binary_unchanged:
+            status = "EXECUTABLE_CHANGED"
+    fail_process = status in {"PROCESS_FAILED", "LICENSE_ERROR_EVIDENCE"}
+    fail_diagnostic = parsed["test_verdict"] == "FAIL"
+    fail_checks = checker["state"] == "FAILED"
+    completed_and_checked = (
+        status == "COMPLETED_UNVERIFIED"
+        and code == 0
+        and checker["state"] == "PASSED"
+        and not fail_diagnostic
+        and parse_complete
+        and log_decoded_without_loss
+        and binary_unchanged
+    )
+    if fail_process or fail_diagnostic or fail_checks:
+        verdict = "FAIL"
+        checker_verdict = "FAIL" if fail_checks else "UNKNOWN"
+    elif completed_and_checked:
+        # JUnit подтверждает лишь cocotb-тесты, но не все внешние SVA/assertions.
+        verdict = "UNKNOWN"
+        checker_verdict = "PASS"
+    else:
+        verdict = "UNKNOWN"
+        checker_verdict = "UNKNOWN"
     disclosed = parsed["items"][:20] if profile.expose_diagnostics else []
-    started = status not in {"TOOL_UNAVAILABLE", "DO_HASH_MISMATCH", "SCRIPT_TOO_LARGE", "INVALID_SCRIPT"}
     return {
         "status": status,
         "exit_code": code,
         "eda_executed": started,
-        "test_verdict": parsed["test_verdict"],
+        "test_verdict": verdict,
+        "checker_verdict": checker_verdict,
+        "assertions_verdict": "UNKNOWN",
+        "regression_verdict": "UNKNOWN",
+        "verdict_basis": (
+            "FRESH_JUNIT_CHECKER_PASS_ONLY" if checker_verdict == "PASS"
+            else "OBSERVED_NEGATIVE_EVIDENCE" if verdict == "FAIL"
+            else "INSUFFICIENT_EVIDENCE"
+        ),
+        "vendor_compatibility_verified": False,
+        "transcript_parser_complete": parse_complete,
+        "transcript_utf8_lossless": log_decoded_without_loss,
+        "run_provenance": {
+            "collector": "LOCAL_ALLOWLISTED_VSIM_PROCESS",
+            "approved_do_sha256": profile.script_sha256 if started else None,
+            "approved_executable_sha256": profile.executable_sha256 if started else None,
+            "executable_unchanged": binary_unchanged,
+            "stdout_sha256": hashlib.sha256(log).hexdigest(),
+        },
+        "checker": checker,
         "compile_status": "UNKNOWN",
         "elaboration_status": "UNKNOWN",
         "simulation_status": "UNKNOWN",

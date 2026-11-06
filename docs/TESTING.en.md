@@ -33,4 +33,8 @@ Public CI additionally verifies denied/unconfigured profiles, changed DO hashes,
 
 The read-only MCP tools `assess_verification_run(record)` and `assess_regression(runs)` track compile, elaboration, simulation, checker and regression independently. Caller-supplied positive claims are **UNVERIFIED**, never PASS. See [verification contract](VERIFICATION.en.md). Live Siemens EDA **NOT_RUN**.
 
+## Fresh JUnit mock integration (#5)
+
+The added tests exercise size-bounded XML parsing (including DTD rejection, inconsistent totals, duplicate/omitted names and skipped cases), fresh per-invocation report paths, pinned executable hash before/after, malformed UTF-8, unrecognized long transcript lines, errors and lost reports. A **real** MCP in-process `tools/list`/`tools/call` test uses a mocked vendor process. Positive mock evidence produces `checker_verdict=PASS` but `test_verdict=UNKNOWN`. No commercial Siemens license or real Questa is used in CI. See [JUnit test contract](JUNIT_EVIDENCE.en.md).
+
 The #4 security regression suite additionally checks cancellation **during process spawn** and repeated cancellation while child cleanup is pending. The temporary DO snapshot must remain available until cleanup is complete. These are mock-process tests; real Windows/Linux vendor descendant shutdown remains NOT_RUN.

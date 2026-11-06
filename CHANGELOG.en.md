@@ -21,4 +21,10 @@ Changes follow Keep a Changelog. Semantic Versioning is planned once the public 
 - Operator allowlist of trusted vsim/DO profiles, SHA-256 validation and bounded mock-tested subprocess execution.
 - No EDA product certification or proof of test PASS.
 
+### Experimental cocotb self-checker (#5)
+- Fresh bounded cocotb JUnit XML from an operator-approved local process, with pinned simulator and DO hashes
+- Expected testcase and suite-count reconciliation, reject skipped/duplicate/missing/unsafe artifacts
+- Separate `checker_verdict=PASS` from overall verification `test_verdict=UNKNOWN`; negative evidence is retained
+- Synthetic mock subprocess and real MCP tools/call contract tests; no licensed Siemens validation
+
 - Protected child cleanup waits through repeated MCP cancellations and cancellation during subprocess spawn before removing the DO snapshot (mock tested).

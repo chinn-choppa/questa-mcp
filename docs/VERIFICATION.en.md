@@ -25,3 +25,7 @@ Up to 32 records, unique (`test_id`, `seed`) pairs, per-test evidence and `PASS/
 Total request limit is 1 MiB. Names, hashes and versions supplied by the caller are **not validated local artifact provenance**. Never send private transcripts or credentials.
 
 No synthetic test is allowed to claim a real PASS, regardless of metadata provided by the caller.
+
+## Local cocotb checker from approved runner
+
+A new **operator-authorized local runtime** can now capture a fresh cocotb JUnit report, independently from the untrusted `assess_verification_run` tool. This marks self-checking cocotb results as `checker_verdict=PASS` if all expected tests executed and the process/parsed transcript are clean. No overall `test_verdict=PASS` is issued: independent SystemVerilog assertions and the phase/regression transitions still require evidence. See [JUnit evidence](JUNIT_EVIDENCE.en.md). The generic `assess_verification_run` remains `CALLER_SUPPLIED_UNVERIFIED`.
