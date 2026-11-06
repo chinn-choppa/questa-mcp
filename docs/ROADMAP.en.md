@@ -47,3 +47,6 @@ The read-only MCP tools `assess_verification_run(record)` and `assess_regression
 
 - [x] Fresh output directory per seed, read-only reinspection and synthetic real-MCP contract test.
 - [ ] Vendor-authenticated provenance and live Wavepeek/wave-mcp: `NOT_RUN`.
+
+- [x] #6: typed VCD/FST pointer via `prepare_run_handoff`, without analyzer invocation or native WLF assumptions.
+- [ ] #6: actual VCD/FST open in an external analyzer — final acceptance.

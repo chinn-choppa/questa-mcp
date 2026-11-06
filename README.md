@@ -92,3 +92,5 @@ Apache License 2.0. Настоящий репозиторий не связан 
 ## Артефакты с уникальным run_id (#6)
 
 Опциональные `run_artifacts_dir` и `run_artifacts` создают новый каталог на каждый seed через `QUESTA_MCP_ARTIFACT_DIR`. `list_run_artifacts(project_id, run_id)` возвращает метаданные разрешённых файлов, но не считает их аттестованными Siemens: `produced_by_run_id=null`, `format_validated=false`. Каталоги сохраняются до ручной очистки. См. [RUN_ARTIFACTS](docs/RUN_ARTIFACTS.md).
+
+Для передачи файлов доверенному локальному Wavepeek/wave-mcp предусмотрен `prepare_run_handoff`: только VCD/FST и явное разрешение раскрытия пути. Сам анализатор MCP **не запускает**, доступность и результат остаются `NOT_RUN`. См. [контракт](docs/RUN_ARTIFACTS.md).

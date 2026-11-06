@@ -62,3 +62,7 @@ Questa/ModelSim `** Error (suppressible):` и `** Warning (suppressible):` ра�
 ## `list_run_artifacts(project_id, run_id)` (#6)
 
 Read-only инструмент принимает ID разрешённого проекта и ровно 24 lowercase hex символа run_id. Локальный профиль задаёт безопасный каталог `run_artifacts_dir` и непустой список `run_artifacts`. Поля `observed_in_run_id`, `origin=OBSERVED_IN_RUN_DIRECTORY_NOT_VENDOR_ATTESTED`, `produced_by_run_id=null`, `format_validated=false`. Некорректные ID дают `DENIED`, отсутствующий каталог — `RUN_NOT_FOUND`. Абсолютные пути по умолчанию скрыты. См. [контракт](RUN_ARTIFACTS.md).
+
+## `prepare_run_handoff(project_id, run_id, artifact_id, consumer)` (#6)
+
+Только разрешённый `project_id`, 24-hex `run_id`, разрешённый `artifact_id` и `consumer=wavepeek|wave-mcp`. Без локального согласия на путь — `OPT_IN_REQUIRED`. Только VCD/FST; WLF/UCDB — `UNSUPPORTED_NATIVE_FORMAT`. `READY_FOR_EXTERNAL_CLIENT` означает наличие локального указателя, **не успешный запуск анализатора**. Ответ без секретов, кроме отдельно разрешённого абсолютного пути. См. [подробности](RUN_ARTIFACTS.md).

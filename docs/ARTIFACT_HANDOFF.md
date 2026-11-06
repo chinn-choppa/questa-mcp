@@ -43,3 +43,7 @@
 ## Артефакты по run_id
 
 Отдельный `list_run_artifacts(project_id, run_id)` работает с новым каталогом конкретного seed. Прежний `list_approved_artifacts` продолжает описывать старые файлы без привязки. Связь с каталогом не доказывает, что файл создал Siemens. См. [RUN_ARTIFACTS](RUN_ARTIFACTS.md).
+
+## Типизированная передача VCD/FST
+
+Новый `prepare_run_handoff` выдаёт локальный указатель только на разрешённые VCD/FST при `expose_artifact_paths=true`; WLF/UCDB возвращают `UNSUPPORTED_NATIVE_FORMAT`. Вызов внешнего анализатора отсутствует, результат `external_execution=NOT_RUN`. См. [RUN_ARTIFACTS](RUN_ARTIFACTS.md).

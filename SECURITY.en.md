@@ -45,3 +45,5 @@ The new MCP operation accepts no caller-supplied command, DO path or seed; all v
 ## Retained output directories
 
 The operator prepares a safe root under workspace; the server creates random child directories without automatic deletion. The operator controls permissions, quotas and retention. The 8 MiB hashing cap does not constrain vendor disk writes. A same-user process may modify results. See [security boundary](docs/RUN_ARTIFACTS.en.md).
+
+`prepare_run_handoff` discloses a VCD/FST absolute path **only** after local `expose_artifact_paths=true`. Native WLF/UCDB are excluded; no arbitrary commands or network access. A same-user process may still modify the file after inspection.

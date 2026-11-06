@@ -43,3 +43,7 @@ References: [Wavepeek](https://github.com/kleverhq/wavepeek), [wave-mcp](https:/
 ## Run-specific artifact directories
 
 A separate `list_run_artifacts(project_id, run_id)` reads a newly created output directory for a given seed. The original `list_approved_artifacts` continues to describe unrelated pre-existing files. Directory association does not prove the file was produced by Siemens. See [RUN_ARTIFACTS](RUN_ARTIFACTS.en.md).
+
+## Typed VCD/FST pointer
+
+New `prepare_run_handoff` yields a local pointer only to allowlisted VCD/FST when `expose_artifact_paths=true`; WLF/UCDB return `UNSUPPORTED_NATIVE_FORMAT`. The external analyzer is not invoked and `external_execution=NOT_RUN`. See [RUN_ARTIFACTS](RUN_ARTIFACTS.en.md).

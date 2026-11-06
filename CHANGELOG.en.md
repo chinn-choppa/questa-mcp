@@ -42,3 +42,5 @@ Changes follow Keep a Changelog. Semantic Versioning is planned once the public 
 ### Run-scoped output metadata (#6)
 - Fresh directory per seed, fixed environment and read-only `list_run_artifacts` MCP tool.
 - Bounded SHA-256 metadata and explicit unattested vendor-provenance state.
+
+- New read-only `prepare_run_handoff`: local pointers only to allowlisted VCD/FST after explicit path-disclosure consent; WLF/UCDB never misrepresented as supported.

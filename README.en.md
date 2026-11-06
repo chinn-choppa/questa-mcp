@@ -79,3 +79,5 @@ Approved local DO profiles may enable `checker.format="cocotb-junit-v1"`, an exa
 ## Artifacts scoped to unique run IDs (#6)
 
 Optional `run_artifacts_dir` and `run_artifacts` create a fresh directory per seed through `QUESTA_MCP_ARTIFACT_DIR`. `list_run_artifacts(project_id, run_id)` returns operator-allowed metadata without claiming Siemens authorship: `produced_by_run_id=null`, `format_validated=false`. Retention is operator-managed. See [RUN_ARTIFACTS](docs/RUN_ARTIFACTS.en.md).
+
+For a trusted local Wavepeek/wave-mcp client, `prepare_run_handoff` returns a typed VCD/FST pointer only after explicit path-disclosure opt-in. This MCP server **does not execute** an analyzer; external compatibility and actual results remain `NOT_RUN`. See [contract](docs/RUN_ARTIFACTS.en.md).

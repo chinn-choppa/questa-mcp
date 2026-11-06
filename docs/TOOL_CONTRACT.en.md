@@ -51,3 +51,7 @@ Accepts only an approved ID. A local profile must pin exactly three `phase_scrip
 ## `list_run_artifacts(project_id, run_id)` (#6)
 
 Read-only tool accepting only an approved project ID and exactly 24 lowercase hex run-ID characters. A local profile fixes a safe `run_artifacts_dir` and nonempty `run_artifacts`. Outputs include `observed_in_run_id`, `origin=OBSERVED_IN_RUN_DIRECTORY_NOT_VENDOR_ATTESTED`, `produced_by_run_id=null`, `format_validated=false`. Invalid IDs return `DENIED`, absent directories `RUN_NOT_FOUND`. Absolute paths remain private by default. See [contract](RUN_ARTIFACTS.en.md).
+
+## `prepare_run_handoff(project_id, run_id, artifact_id, consumer)` (#6)
+
+Only approved `project_id`, 24-hex `run_id`, approved `artifact_id`, and `consumer=wavepeek|wave-mcp`. Without local path-disclosure consent returns `OPT_IN_REQUIRED`. VCD/FST only; native WLF/UCDB yield `UNSUPPORTED_NATIVE_FORMAT`. `READY_FOR_EXTERNAL_CLIENT` means a local pointer exists, **not successful analyzer execution**. No secrets except operator-approved absolute paths. See [details](RUN_ARTIFACTS.en.md).
