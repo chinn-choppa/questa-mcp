@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import secrets
 import json
 import os
 import re
@@ -11,6 +12,8 @@ import signal
 import stat
 import subprocess
 import tempfile
+from contextlib import contextmanager
+from typing import Iterator
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -48,6 +51,8 @@ class ApprovedProject:
     executable_sha256: str | None = None
     artifact_specs: tuple[ArtifactSpec, ...] = ()
     expose_artifact_paths: bool = False
+    capture_run_artifacts: bool = False
+    run_artifact_store: Path | None = None
 
 
 def _absolute_file(value: object) -> Path:
@@ -159,9 +164,27 @@ def _load_approved_profiles() -> dict[str, ApprovedProject]:
         reveal_paths = item.get("expose_artifact_paths", False)
         if not isinstance(reveal_paths, bool):
             raise ValueError("INVALID_ARTIFACT_PATH_DISCLOSURE")
+        capture = item.get("capture_run_artifacts", False)
+        if not isinstance(capture, bool):
+            raise ValueError("INVALID_CAPTURE_SETTING")
+        store_raw = item.get("run_artifact_store")
+        store: Path | None = None
+        if store_raw is not None:
+            if not capture or not isinstance(store_raw, str) or not store_raw or "\x00" in store_raw:
+                raise ValueError("INVALID_RUN_ARTIFACT_STORE")
+            store_path = Path(store_raw)
+            if (not store_path.is_absolute() or store_path.is_symlink()
+                    or not store_path.is_dir()):
+                raise ValueError("INVALID_RUN_ARTIFACT_STORE")
+            store = store_path.resolve(strict=True)
+            if store.is_relative_to(workspace) or workspace.is_relative_to(store):
+                raise ValueError("RUN_ARTIFACT_STORE_OVERLAPS_WORKSPACE")
+        if capture and (not artifact_specs or binary_digest is None):
+            raise ValueError("CAPTURE_REQUIRES_SPECS_AND_BINARY_HASH")
         profiles[key] = ApprovedProject(
             key, workspace, executable, script, digest, seconds, max_bytes, expose,
             checker_format, expected_tests, binary_digest, artifact_specs, reveal_paths,
+            capture, store,
         )
     return profiles
 
@@ -254,6 +277,67 @@ def list_approved_artifacts(project_id: str) -> dict[str, object]:
         return {"state": "INVALID_CONFIGURATION", "items": [], "eda_executed": False}
 
 
+@contextmanager
+def _new_run_artifact_dir(
+    profile: ApprovedProject,
+) -> Iterator[tuple[Path | None, str | None, bool]]:
+    """Уникальный пустой каталог запуска; сохранение только по разрешению оператора."""
+    if not profile.capture_run_artifacts:
+        yield None, None, False
+        return
+    run_id = secrets.token_hex(16)
+    if profile.run_artifact_store is not None:
+        store = profile.run_artifact_store
+        # Повторная проверка: конфигурация могла измениться после чтения.
+        if store.is_symlink() or not store.is_dir():
+            raise ValueError("INVALID_RUN_ARTIFACT_STORE")
+        root = Path(tempfile.mkdtemp(prefix=f"qm-{run_id}-", dir=str(store)))
+        # Храним до ручной очистки оператором. При отмене тоже не считаем артефакты надёжными.
+        yield root, run_id, True
+    else:
+        with tempfile.TemporaryDirectory(prefix="questa-mcp-artifacts-") as temporary:
+            root = Path(temporary) / "run"
+            root.mkdir(mode=0o700)
+            yield root, run_id, False
+
+
+def _fresh_artifact_manifest(
+    root: Path | None, run_id: str | None, retained: bool,
+    profile: ApprovedProject, *, process_started: bool,
+) -> dict[str, object]:
+    """Связывать только наблюдение в новом каталоге, не авторство симулятора."""
+    if root is None or run_id is None:
+        return {"state": "NOT_CONFIGURED", "count": 0, "items": [], "run_id": None,
+                "retained": False, "capture_mode": "DISABLED"}
+    metadata = inspect_approved_artifacts(
+        root, profile.artifact_specs,
+        expose_paths=bool(retained and profile.expose_artifact_paths),
+    )
+    for item in metadata["items"]:
+        observed = process_started and item["state"] in (
+            "HASHED", "HASH_SKIPPED_LARGE_FILE", "HASH_SKIPPED_GROWING_FILE"
+        )
+        item["observed_under_run_id"] = run_id if observed else None
+        item["origin"] = (
+            "FRESH_RUN_DIRECTORY_OBSERVED" if observed
+            else "NO_RUN_ASSOCIATION"
+        )
+        # DO/Tcl и другой процесс с теми же правами могут написать файл.
+        item["produced_by_run_id"] = None
+        item["production_verified"] = False
+    count = sum(1 for item in metadata["items"] if item["observed_under_run_id"])
+    return {
+        "state": "OBSERVED" if count == len(metadata["items"]) else "PARTIAL_OR_MISSING",
+        "count": metadata["count"],
+        "observed_count": count,
+        "items": metadata["items"],
+        "run_id": run_id,
+        "retained": retained,
+        "capture_mode": ("PERSISTENT_OPERATOR_APPROVED" if retained
+                         else "EPHEMERAL_REMOVED_AFTER_CALL"),
+    }
+
+
 async def _await_protected(task: asyncio.Task) -> object:
     """Дождаться завершения дочерней задачи при повторных cancel() родителя."""
     current = asyncio.current_task()
@@ -275,7 +359,8 @@ async def _terminate_before_return(proc: asyncio.subprocess.Process) -> bool:
 
 
 async def _execute(
-    profile: ApprovedProject, *, results_file: Path | None = None
+    profile: ApprovedProject, *, results_file: Path | None = None,
+    artifact_dir: Path | None = None,
 ) -> tuple[str, int | None, bytes]:
     """Снимать снимок DO в приватную папку, не передавать изменяемый исходник."""
     try:
@@ -297,10 +382,13 @@ async def _execute(
             if os.name == "nt" else {"start_new_session": True}
         )
         extra: dict[str, object] = {}
-        if results_file is not None:
-            # Новый пустой файл на каждый запуск; не принимать старый results.xml.
+        if results_file is not None or artifact_dir is not None:
             environment = os.environ.copy()
-            environment["COCOTB_RESULTS_FILE"] = str(results_file)
+            if results_file is not None:
+                # Новый пустой файл на каждый запуск; не принимать старый results.xml.
+                environment["COCOTB_RESULTS_FILE"] = str(results_file)
+            if artifact_dir is not None:
+                environment["QUESTA_MCP_ARTIFACT_DIR"] = str(artifact_dir)
             extra["env"] = environment
         spawn = asyncio.create_task(
             asyncio.create_subprocess_exec(
@@ -371,24 +459,32 @@ async def run_approved_project(project_id: str) -> dict[str, object]:
             return {"status": "EXECUTABLE_UNVERIFIED",
                     "test_verdict": "UNKNOWN", "eda_executed": False}
 
-    # Один приватный каталог и новый путь результата для каждого выполнения.
-    with tempfile.TemporaryDirectory(prefix="questa-mcp-checks-") as artifact_dir:
-        report_path = Path(artifact_dir) / "results.xml"
-        status, code, log = await _execute(
-            profile, results_file=report_path if profile.checker_format else None
-        )
-        checker: dict[str, object] = {
-            "format": profile.checker_format, "state": "NOT_CONFIGURED",
-            "reason": "CHECKER_NOT_CONFIGURED", "tests": 0,
-            "failures": 0, "errors": 0, "skipped": 0,
-            "expected_tests": len(profile.expected_tests), "report_sha256": None,
-        }
-        if profile.checker_format is not None:
-            content, read_state = read_junit_artifact(report_path)
-            if content is None:
-                checker.update(state="UNKNOWN", reason=read_state)
-            else:
-                checker = analyze_junit_bytes(content, profile.expected_tests)
+    # Все временные пути выделяются сервером. DO получает только env для нового run root.
+    with tempfile.TemporaryDirectory(prefix="questa-mcp-checks-") as checks_dir:
+        with _new_run_artifact_dir(profile) as (run_root, run_id, retained):
+            report_path = Path(checks_dir) / "results.xml"
+            status, code, log = await _execute(
+                profile, results_file=report_path if profile.checker_format else None,
+                artifact_dir=run_root,
+            )
+            checker: dict[str, object] = {
+                "format": profile.checker_format, "state": "NOT_CONFIGURED",
+                "reason": "CHECKER_NOT_CONFIGURED", "tests": 0,
+                "failures": 0, "errors": 0, "skipped": 0,
+                "expected_tests": len(profile.expected_tests), "report_sha256": None,
+            }
+            if profile.checker_format is not None:
+                content, read_state = read_junit_artifact(report_path)
+                if content is None:
+                    checker.update(state="UNKNOWN", reason=read_state)
+                else:
+                    checker = analyze_junit_bytes(content, profile.expected_tests)
+            spawn_started = status not in {
+                "TOOL_UNAVAILABLE", "DO_HASH_MISMATCH", "SCRIPT_TOO_LARGE", "INVALID_SCRIPT"
+            }
+            artifacts = _fresh_artifact_manifest(
+                run_root, run_id, retained, profile, process_started=spawn_started,
+            )
 
     log_decoded_without_loss = True
     try:
@@ -458,12 +554,14 @@ async def run_approved_project(project_id: str) -> dict[str, object]:
         "transcript_utf8_lossless": log_decoded_without_loss,
         "run_provenance": {
             "collector": "LOCAL_ALLOWLISTED_VSIM_PROCESS",
+            "run_id": artifacts["run_id"],
             "approved_do_sha256": profile.script_sha256 if started else None,
             "approved_executable_sha256": profile.executable_sha256 if started else None,
             "executable_unchanged": binary_unchanged,
             "stdout_sha256": hashlib.sha256(log).hexdigest(),
         },
         "checker": checker,
+        "run_artifacts": artifacts,
         "compile_status": "UNKNOWN",
         "elaboration_status": "UNKNOWN",
         "simulation_status": "UNKNOWN",
