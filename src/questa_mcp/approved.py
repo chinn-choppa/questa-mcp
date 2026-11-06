@@ -374,18 +374,25 @@ async def run_approved_project(project_id: str) -> dict[str, object]:
     )
     if fail_process or fail_diagnostic or fail_checks:
         verdict = "FAIL"
+        checker_verdict = "FAIL" if fail_checks else "UNKNOWN"
     elif completed_and_checked:
-        verdict = "PASS"
+        # JUnit подтверждает лишь cocotb-тесты, но не все внешние SVA/assertions.
+        verdict = "UNKNOWN"
+        checker_verdict = "PASS"
     else:
         verdict = "UNKNOWN"
+        checker_verdict = "UNKNOWN"
     disclosed = parsed["items"][:20] if profile.expose_diagnostics else []
     return {
         "status": status,
         "exit_code": code,
         "eda_executed": started,
         "test_verdict": verdict,
+        "checker_verdict": checker_verdict,
+        "assertions_verdict": "UNKNOWN",
+        "regression_verdict": "UNKNOWN",
         "verdict_basis": (
-            "FRESH_EXPECTED_JUNIT_AND_ZERO_EXIT" if verdict == "PASS"
+            "FRESH_JUNIT_CHECKER_PASS_ONLY" if checker_verdict == "PASS"
             else "OBSERVED_NEGATIVE_EVIDENCE" if verdict == "FAIL"
             else "INSUFFICIENT_EVIDENCE"
         ),

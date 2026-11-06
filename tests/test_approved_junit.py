@@ -99,12 +99,15 @@ class ApprovedJunitTests(unittest.IsolatedAsyncioTestCase):
         with patch("questa_mcp.approved.asyncio.create_subprocess_exec", side_effect=spawn):
             return await run_approved_project("smoke")
 
-    async def test_fresh_expected_and_zero_exit_is_pass_with_explicit_basis(self):
+    async def test_fresh_expected_checker_pass_does_not_claim_assertion_pass(self):
         got = await self.call(junit())
-        self.assertEqual(got["test_verdict"], "PASS")
+        self.assertEqual(got["test_verdict"], "UNKNOWN")
+        self.assertEqual(got["checker_verdict"], "PASS")
+        self.assertEqual(got["assertions_verdict"], "UNKNOWN")
+        self.assertEqual(got["regression_verdict"], "UNKNOWN")
         self.assertEqual(got["checker"]["state"], "PASSED")
         self.assertEqual(got["checker"]["tests"], 1)
-        self.assertEqual(got["verdict_basis"], "FRESH_EXPECTED_JUNIT_AND_ZERO_EXIT")
+        self.assertEqual(got["verdict_basis"], "FRESH_JUNIT_CHECKER_PASS_ONLY")
         self.assertFalse(got["vendor_compatibility_verified"])
         self.assertEqual(got["run_provenance"]["approved_do_sha256"], self.entry["do_sha256"])
         self.assertEqual(len(got["checker"]["report_sha256"]), 64)
@@ -226,7 +229,8 @@ class ApprovedJunitTests(unittest.IsolatedAsyncioTestCase):
         with patch("questa_mcp.approved.asyncio.create_subprocess_exec", side_effect=spawn):
             a = await run_approved_project("smoke")
             b = await run_approved_project("smoke")
-        self.assertEqual((a["test_verdict"], b["test_verdict"]), ("PASS", "PASS"))
+        self.assertEqual((a["checker_verdict"], b["checker_verdict"]), ("PASS", "PASS"))
+        self.assertEqual((a["test_verdict"], b["test_verdict"]), ("UNKNOWN", "UNKNOWN"))
         self.assertNotEqual(paths[0], paths[1])
         self.assertFalse(Path(paths[0]).exists())
         self.assertFalse(Path(paths[1]).exists())
