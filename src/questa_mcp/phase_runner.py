@@ -15,6 +15,7 @@ import tempfile
 from dataclasses import replace
 from pathlib import Path
 
+from .artifact_handoff import inspect_approved_artifacts
 from .approved import (
     CONFIG_ENV,
     _ID,
@@ -38,12 +39,16 @@ def _not_run() -> dict[str, object]:
     }
 
 
-async def _run_phase(profile, phase: tuple[str, Path, str], seed: int) -> dict[str, object]:
+async def _run_phase(
+    profile, phase: tuple[str, Path, str], seed: int, *, artifact_dir: Path | None = None
+) -> dict[str, object]:
     phase_name, do_path, digest = phase
     stage_profile = replace(profile, script=do_path, script_sha256=digest)
     with tempfile.TemporaryDirectory(prefix="questa-mcp-phase-") as td:
         report_path = Path(td) / "results.xml" if phase_name == "simulation" and profile.checker_format else None
-        status, code, log = await _execute(stage_profile, results_file=report_path, seed=seed)
+        status, code, log = await _execute(
+            stage_profile, results_file=report_path, seed=seed, artifact_dir=artifact_dir
+        )
         checker = None
         if report_path is not None:
             raw, read_status = read_junit_artifact(report_path)
@@ -146,10 +151,21 @@ async def run_approved_regression(project_id: str) -> dict[str, object]:
 
     runs: list[dict[str, object]] = []
     for seed in profile.regression_seeds:
+        run_id = secrets.token_hex(12)
+        artifact_dir: Path | None = None
+        if profile.run_artifact_root is not None:
+            artifact_dir = profile.run_artifact_root / run_id
+            try:
+                artifact_dir.mkdir(mode=0o700, exist_ok=False)
+            except OSError:
+                return {
+                    "status": "ARTIFACT_DIR_UNAVAILABLE", "regression_verdict": "UNKNOWN",
+                    "runs": runs, "vendor_compatibility_verified": False,
+                }
         phases = {phase: _not_run() for phase in _PHASES}
         for phase in profile.phase_scripts:
             name = phase[0]
-            result = await _run_phase(profile, phase, seed)
+            result = await _run_phase(profile, phase, seed, artifact_dir=artifact_dir)
             phases[name] = result
             if result["state"] != "COMPLETED":
                 break
@@ -162,12 +178,24 @@ async def run_approved_regression(project_id: str) -> dict[str, object]:
             verdict, reason = "UNKNOWN", "CHECKER_PASS_ONLY_ASSERTIONS_UNVERIFIED"
         else:
             verdict, reason = "UNKNOWN", "INCOMPLETE_OR_UNVERIFIED_PHASES"
+        manifest = None
+        origin = "NOT_CONFIGURED"
+        if artifact_dir is not None:
+            manifest = inspect_approved_artifacts(
+                artifact_dir, profile.run_artifact_specs,
+                expose_paths=profile.expose_artifact_paths,
+            )
+            for entry in manifest["items"]:
+                entry["origin"] = "OBSERVED_IN_RUN_DIRECTORY_NOT_VENDOR_ATTESTED"
+                entry["observed_in_run_id"] = run_id
+            origin = "RUN_SCOPED_DIRECTORY_OBSERVED_NOT_VENDOR_ATTESTED"
         runs.append({
-            "run_id": secrets.token_hex(12), "seed": seed,
+            "run_id": run_id, "seed": seed,
             "seed_source": "OPERATOR_CONFIGURED_ENV_NOT_OBSERVED_BY_SIMULATOR",
             "phases": phases, "test_verdict": verdict, "reason": reason,
             "checker_verdict": phases["simulation"]["checker_verdict"],
-            "assertions_verdict": "UNKNOWN", "artifact_origin": "NOT_ATTESTED",
+            "assertions_verdict": "UNKNOWN", "artifact_origin": origin,
+            "artifact_manifest": manifest,
         })
     counts = {"FAIL": 0, "UNKNOWN": 0}
     for run in runs:

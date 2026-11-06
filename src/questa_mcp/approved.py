@@ -12,7 +12,7 @@ import stat
 import subprocess
 import tempfile
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 from .artifact_handoff import ArtifactSpec, inspect_approved_artifacts, validate_artifact_specs
 from .diagnostics import parse_diagnostics_text
@@ -50,6 +50,8 @@ class ApprovedProject:
     expose_artifact_paths: bool = False
     phase_scripts: tuple[tuple[str, Path, str], ...] = ()
     regression_seeds: tuple[int, ...] = ()
+    run_artifact_root: Path | None = None
+    run_artifact_specs: tuple[ArtifactSpec, ...] = ()
 
 
 def _absolute_file(value: object) -> Path:
@@ -190,10 +192,35 @@ def _load_approved_profiles() -> dict[str, ApprovedProject]:
             regression_seeds = tuple(seeds)
         elif "regression_seeds" in item:
             raise ValueError("PHASE_CONFIG_REQUIRED")
+        # Опциональный каталог для новых выходных данных каждого seed.
+        run_root: Path | None = None
+        run_artifacts: tuple[ArtifactSpec, ...] = ()
+        if "run_artifacts" in item or "run_artifacts_dir" in item:
+            if not phase_scripts or "run_artifacts" not in item or "run_artifacts_dir" not in item:
+                raise ValueError("PHASE_RUN_ARTIFACTS_REQUIRED")
+            specs = validate_artifact_specs(item["run_artifacts"])
+            if not specs:
+                raise ValueError("EMPTY_RUN_ARTIFACTS")
+            raw_output = item["run_artifacts_dir"]
+            if (not isinstance(raw_output, str) or not raw_output or len(raw_output) > 512
+                    or "\\" in raw_output or ":" in raw_output or "\x00" in raw_output):
+                raise ValueError("INVALID_RUN_ARTIFACT_ROOT")
+            rel_output = PurePosixPath(raw_output)
+            if rel_output.is_absolute() or any(p in ("", ".", "..") for p in raw_output.split("/")):
+                raise ValueError("INVALID_RUN_ARTIFACT_ROOT")
+            candidate = workspace
+            for part in rel_output.parts:
+                candidate = candidate / part
+                if candidate.is_symlink() or (hasattr(candidate, "is_junction") and candidate.is_junction()):
+                    raise ValueError("UNSAFE_RUN_ARTIFACT_ROOT")
+            resolved = candidate.resolve(strict=True)
+            if not resolved.is_relative_to(workspace) or not resolved.is_dir():
+                raise ValueError("INVALID_RUN_ARTIFACT_ROOT")
+            run_root, run_artifacts = resolved, specs
         profiles[key] = ApprovedProject(
             key, workspace, executable, script, digest, seconds, max_bytes, expose,
             checker_format, expected_tests, binary_digest, artifact_specs, reveal_paths,
-            phase_scripts, regression_seeds,
+            phase_scripts, regression_seeds, run_root, run_artifacts,
         )
     return profiles
 
@@ -286,6 +313,41 @@ def list_approved_artifacts(project_id: str) -> dict[str, object]:
         return {"state": "INVALID_CONFIGURATION", "items": [], "eda_executed": False}
 
 
+
+def list_run_artifacts(project_id: str, run_id: str) -> dict[str, object]:
+    """Только ранее разрешённые имена в конкретном наблюдаемом каталоге запуска."""
+    if (not isinstance(project_id, str) or not _ID.fullmatch(project_id)
+            or not isinstance(run_id, str) or not re.fullmatch(r"[0-9a-f]{24}", run_id)):
+        return {"state": "DENIED", "items": [], "eda_executed": False}
+    if not os.getenv(CONFIG_ENV):
+        return {"state": "NOT_CONFIGURED", "items": [], "eda_executed": False}
+    try:
+        profile = _load_approved_profiles().get(project_id)
+        if profile is None:
+            return {"state": "DENIED", "items": [], "eda_executed": False}
+        root = profile.run_artifact_root
+        if root is None or not profile.run_artifact_specs:
+            return {"state": "NOT_CONFIGURED", "items": [], "eda_executed": False}
+        dirname = root / run_id
+        if dirname.is_symlink() or (hasattr(dirname, "is_junction") and dirname.is_junction()):
+            return {"state": "UNSAFE_RUN_DIRECTORY", "items": [], "eda_executed": False}
+        if not dirname.is_dir() or dirname.resolve(strict=True).parent != root:
+            return {"state": "RUN_NOT_FOUND", "items": [], "eda_executed": False}
+        manifest = inspect_approved_artifacts(
+            dirname, profile.run_artifact_specs,
+            expose_paths=profile.expose_artifact_paths,
+        )
+        for entry in manifest["items"]:
+            entry["origin"] = "OBSERVED_IN_RUN_DIRECTORY_NOT_VENDOR_ATTESTED"
+            entry["observed_in_run_id"] = run_id
+        return {
+            "project_id": project_id, "run_id": run_id, "eda_executed": False,
+            "origin": "RUN_DIRECTORY_EXISTS_NOT_VENDOR_ATTESTED", **manifest,
+        }
+    except (OSError, ValueError, json.JSONDecodeError):
+        return {"state": "INVALID_CONFIGURATION", "items": [], "eda_executed": False}
+
+
 async def _await_protected(task: asyncio.Task) -> object:
     """Дождаться завершения дочерней задачи при повторных cancel() родителя."""
     current = asyncio.current_task()
@@ -308,7 +370,7 @@ async def _terminate_before_return(proc: asyncio.subprocess.Process) -> bool:
 
 async def _execute(
     profile: ApprovedProject, *, results_file: Path | None = None,
-    seed: int | None = None,
+    seed: int | None = None, artifact_dir: Path | None = None,
 ) -> tuple[str, int | None, bytes]:
     """Снимать снимок DO в приватную папку, не передавать изменяемый исходник."""
     try:
@@ -330,13 +392,15 @@ async def _execute(
             if os.name == "nt" else {"start_new_session": True}
         )
         extra: dict[str, object] = {}
-        if results_file is not None or seed is not None:
+        if results_file is not None or seed is not None or artifact_dir is not None:
             # Программный ввод ограничен именами переменных из реализации.
             environment = os.environ.copy()
             if results_file is not None:
                 environment["COCOTB_RESULTS_FILE"] = str(results_file)
             if seed is not None:
                 environment["QUESTA_MCP_SEED"] = str(seed)
+            if artifact_dir is not None:
+                environment["QUESTA_MCP_ARTIFACT_DIR"] = str(artifact_dir)
             extra["env"] = environment
         spawn = asyncio.create_task(
             asyncio.create_subprocess_exec(
