@@ -54,3 +54,7 @@ Questa/ModelSim `** Error (suppressible):` и `** Warning (suppressible):` ра�
 ## Read-only артефакты (#6)
 
 `list_approved_artifacts(project_id: str)` выбирает только разрешённый профиль и его список `artifacts` (не более 8). Без разрешения — `DENIED`/`NOT_CONFIGURED`; неверная конфигурация — `INVALID_CONFIGURATION`. Каждая запись содержит `id`, `format`, `declared_time_unit`, `time_unit_source`, `size_bytes`, `sha256` (если файл до 8 МиБ), `state`, `format_validated=false`, `origin=EXISTING_WORKSPACE_FILE_NOT_ATTESTED`, `produced_by_run_id=null`, `external_execution=NOT_RUN`, `paths_disclosed`, опциональный `local_path` и `routes`. Путь и содержимое клиент передавать не может. WLF требует отдельной конвертации, UCDB — vendor-native coverage. Подробности: [манифест](ARTIFACT_HANDOFF.md).
+
+## `run_approved_regression(project_id)` (#5)
+
+Только разрешённый ID. Профиль требует точно три `phase_scripts` (`compile`, `elaboration`, `simulation`), каждое с `do_script` и `do_sha256`, а также `executable_sha256`; необязательные `regression_seeds` содержат 1–8 уникальных целых 0…2³²−1. Ответ: `status`, `regression_verdict=FAIL|UNKNOWN|NOT_RUN`, `test_count`, `counts`, `runs[].run_id`, `runs[].seed`, `runs[].phases`, `runs[].checker_verdict`, `runs[].test_verdict`, `runs[].assertions_verdict`, `provenance`. Завершённая фаза обозначает завершение заявленного процесса, а не доказательство операции внутри DO. Положительный checker не приводит к общему PASS. См. [подробный контракт](PHASE_RUNNER.md).

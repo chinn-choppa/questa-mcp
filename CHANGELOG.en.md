@@ -34,3 +34,7 @@ Changes follow Keep a Changelog. Semantic Versioning is planned once the public 
 - Explicit external consumer routes and native WLF/UCDB limitations, without analyzer execution, automatic conversion or uploads.
 - Synthetic security and real MCP contract tests on Windows/Linux.
 
+
+### Approved phase runner and regressions (#5)
+- Three SHA-256-allowlisted DO scripts, independent states, bounded seeds and new `run_approved_regression` MCP tool.
+- Mock-process failure/ordering tests and real MCP contract tests, without inferred verification PASS.

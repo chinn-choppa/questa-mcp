@@ -43,3 +43,7 @@ When an operator-approved profile contains `executable_sha256` and `checker={"fo
 ## Read-only artifacts (#6)
 
 `list_approved_artifacts(project_id: str)` only selects the approved profile and its operator-defined list of up to 8 `artifacts`. No permission returns `DENIED`/`NOT_CONFIGURED`; invalid setup returns `INVALID_CONFIGURATION`. Each item contains `id`, `format`, `declared_time_unit`, `time_unit_source`, `size_bytes`, optional bounded `sha256`, `state`, `format_validated=false`, `origin=EXISTING_WORKSPACE_FILE_NOT_ATTESTED`, `produced_by_run_id=null`, `external_execution=NOT_RUN`, `paths_disclosed`, optional `local_path` and `routes`. No MCP-supplied file paths or contents. WLF needs independent vendor conversion; UCDB is vendor-native coverage. See [manifest contract](ARTIFACT_HANDOFF.en.md).
+
+## `run_approved_regression(project_id)` (#5)
+
+Accepts only an approved ID. A local profile must pin exactly three `phase_scripts` (`compile`, `elaboration`, `simulation`), each with `do_script` and `do_sha256`, plus `executable_sha256`; optional `regression_seeds` supports 1–8 distinct integers 0…2³²−1. Response: `status`, `regression_verdict=FAIL|UNKNOWN|NOT_RUN`, `test_count`, `counts`, `runs[].run_id`, `runs[].seed`, `runs[].phases`, `runs[].checker_verdict`, `runs[].test_verdict`, `runs[].assertions_verdict`, and `provenance`. A completed phase proves only declared-process completion, not actual operations inside Tcl. Positive checker does not establish overall PASS. See [full contract](PHASE_RUNNER.en.md).

@@ -24,3 +24,5 @@ The optional cocotb JUnit checker relies on `COCOTB_RESULTS_FILE`, a cocotb-defi
 ## External analyzer compatibility (#6)
 
 VCD/FST routes reflect documented Wavepeek and Tencent wave-mcp capabilities, **not an observed external invocation**. Native WLF is not considered directly supported; `wlf2vcd` is documented for specific older ModelSim versions but is not invoked here. UCDB requires vendor tooling. Windows/Linux CI validates metadata only, not installed external tool compatibility. See [manifest](ARTIFACT_HANDOFF.en.md).
+
+Sequential `vsim -c -do` phases are mock-tested only, not proof that the particular Siemens/ModelSim edition provides a compatible vlog/vcom flow. Phase meaning is operator-declared via approved DO. Actual consumption of `QUESTA_MCP_SEED` by the simulator has not been verified. See [contract](PHASE_RUNNER.en.md).

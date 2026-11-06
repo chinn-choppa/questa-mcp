@@ -71,3 +71,7 @@ Approved local DO profiles may enable `checker.format="cocotb-junit-v1"`, an exa
 ## Read-only artifact handoff (#6)
 
 `list_approved_artifacts(project_id)` returns metadata for **operator-allowlisted** VCD/FST/WLF/UCDB files: format, size, bounded SHA-256, possible external consumers and provenance limits. Paths are hidden by default, contents never returned, and no conversion/upload/external executable is invoked. An existing workspace file is **not proof of production by the current run**. See [safe artifact handoff](docs/ARTIFACT_HANDOFF.en.md).
+
+## Approved phase runner and seeded regressions (#5)
+
+`run_approved_regression(project_id)` invokes independently SHA-256 checked operator-approved `compile` → `elaboration` → `simulation` DO files for 1–8 configured seeds. Later phases stop on errors and every phase has independent evidence. Zero process exit **does not establish PASS**; positive cocotb checks do not prove independent assertions. See [phase runner](docs/PHASE_RUNNER.en.md).

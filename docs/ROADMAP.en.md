@@ -36,3 +36,9 @@ The read-only MCP tools `assess_verification_run(record)` and `assess_regression
 - [ ] Actual external Wavepeek/wave-mcp handoff with public VCD/FST and vendor-edition acceptance: `NOT_RUN`.
 - [ ] Associate artifacts with a unique observed execution: `NOT_IMPLEMENTED`; existing workspace files remain unattested.
 
+
+## Sequential phase regressions (#5, implementation)
+
+- [x] Operator-pinned three DO scripts, hash checks, sequential execution and independent process states.
+- [x] Up to eight configured seeds, failure short-circuit, synthetic unit/MCP contract tests.
+- [ ] Actual vendor phase semantics, consumed seeds, independent SVA and full PASS evidence require separate Siemens acceptance and additional integration.
