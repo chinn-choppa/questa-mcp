@@ -8,6 +8,7 @@ import json
 import os
 import re
 import signal
+import stat
 import subprocess
 import tempfile
 from dataclasses import dataclass
@@ -43,6 +44,7 @@ class ApprovedProject:
     expose_diagnostics: bool
     checker_format: str | None = None
     expected_tests: tuple[str, ...] = ()
+    executable_sha256: str | None = None
 
 
 def _absolute_file(value: object) -> Path:
@@ -52,6 +54,19 @@ def _absolute_file(value: object) -> Path:
     if not p.is_absolute() or p.is_symlink() or not p.is_file():
         raise ValueError("INVALID_PATH")
     return p.resolve(strict=True)
+
+
+def _hash_executable(path: Path) -> str:
+    """Хешировать binary потоково, без следования конечным ссылкам."""
+    flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
+    descriptor = os.open(path, flags)
+    with os.fdopen(descriptor, "rb") as handle:
+        if not stat.S_ISREG(os.fstat(handle.fileno()).st_mode):
+            raise ValueError("EXECUTABLE_NOT_REGULAR")
+        digest = hashlib.sha256()
+        while data := handle.read(1024 * 1024):
+            digest.update(data)
+    return digest.hexdigest()
 
 
 def _approved_file(root: Path, relative: object) -> Path:
@@ -130,9 +145,16 @@ def _load_approved_profiles() -> dict[str, ApprovedProject]:
                 raise ValueError("INVALID_EXPECTED_TESTS")
             checker_format = "cocotb-junit-v1"
             expected_tests = tuple(names)
+        binary_digest = item.get("executable_sha256")
+        if binary_digest is not None and (
+            not isinstance(binary_digest, str) or not _SHA256.fullmatch(binary_digest)
+        ):
+            raise ValueError("INVALID_EXECUTABLE_HASH")
+        if checker_format and binary_digest is None:
+            raise ValueError("EXECUTABLE_HASH_REQUIRED")
         profiles[key] = ApprovedProject(
             key, workspace, executable, script, digest, seconds, max_bytes, expose,
-            checker_format, expected_tests,
+            checker_format, expected_tests, binary_digest,
         )
     return profiles
 
@@ -282,6 +304,16 @@ async def run_approved_project(project_id: str) -> dict[str, object]:
     except (OSError, ValueError, json.JSONDecodeError):
         return {"status": "INVALID_CONFIGURATION", "test_verdict": "UNKNOWN", "eda_executed": False}
 
+    # Для аттестации checker необходимо заранее закрепить конкретный binary.
+    if profile.executable_sha256 is not None:
+        try:
+            if _hash_executable(profile.executable) != profile.executable_sha256:
+                return {"status": "EXECUTABLE_HASH_MISMATCH",
+                        "test_verdict": "UNKNOWN", "eda_executed": False}
+        except (OSError, ValueError):
+            return {"status": "EXECUTABLE_UNVERIFIED",
+                    "test_verdict": "UNKNOWN", "eda_executed": False}
+
     # Один приватный каталог и новый путь результата для каждого выполнения.
     with tempfile.TemporaryDirectory(prefix="questa-mcp-checks-") as artifact_dir:
         report_path = Path(artifact_dir) / "results.xml"
@@ -301,16 +333,33 @@ async def run_approved_project(project_id: str) -> dict[str, object]:
             else:
                 checker = analyze_junit_bytes(content, profile.expected_tests)
 
-    decoded = log.decode("utf-8", errors="replace")
+    log_decoded_without_loss = True
+    try:
+        decoded = log.decode("utf-8")
+    except UnicodeDecodeError:
+        decoded = log.decode("utf-8", errors="replace")
+        log_decoded_without_loss = False
+    parse_complete = True
     try:
         parsed = parse_diagnostics_text(decoded)
     except ValueError:
+        parse_complete = False
         parsed = {"test_verdict": "UNKNOWN", "failure_evidence_count": 0,
                   "count": 0, "items": []}
     if status in {"PROCESS_FAILED", "COMPLETED_UNVERIFIED"} and _LICENSE.search(decoded):
         status = "LICENSE_ERROR_EVIDENCE"
     started = status not in {"TOOL_UNAVAILABLE", "DO_HASH_MISMATCH",
                              "SCRIPT_TOO_LARGE", "INVALID_SCRIPT"}
+    binary_unchanged = True
+    if started and profile.executable_sha256 is not None:
+        try:
+            binary_unchanged = (
+                _hash_executable(profile.executable) == profile.executable_sha256
+            )
+        except (OSError, ValueError):
+            binary_unchanged = False
+        if not binary_unchanged:
+            status = "EXECUTABLE_CHANGED"
     fail_process = status in {"PROCESS_FAILED", "LICENSE_ERROR_EVIDENCE"}
     fail_diagnostic = parsed["test_verdict"] == "FAIL"
     fail_checks = checker["state"] == "FAILED"
@@ -319,6 +368,9 @@ async def run_approved_project(project_id: str) -> dict[str, object]:
         and code == 0
         and checker["state"] == "PASSED"
         and not fail_diagnostic
+        and parse_complete
+        and log_decoded_without_loss
+        and binary_unchanged
     )
     if fail_process or fail_diagnostic or fail_checks:
         verdict = "FAIL"
@@ -338,9 +390,13 @@ async def run_approved_project(project_id: str) -> dict[str, object]:
             else "INSUFFICIENT_EVIDENCE"
         ),
         "vendor_compatibility_verified": False,
+        "transcript_parser_complete": parse_complete,
+        "transcript_utf8_lossless": log_decoded_without_loss,
         "run_provenance": {
             "collector": "LOCAL_ALLOWLISTED_VSIM_PROCESS",
             "approved_do_sha256": profile.script_sha256 if started else None,
+            "approved_executable_sha256": profile.executable_sha256 if started else None,
+            "executable_unchanged": binary_unchanged,
             "stdout_sha256": hashlib.sha256(log).hexdigest(),
         },
         "checker": checker,

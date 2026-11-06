@@ -67,6 +67,7 @@ class ApprovedJunitTests(unittest.IsolatedAsyncioTestCase):
             "do_sha256": hashlib.sha256(self.script.read_bytes()).hexdigest(),
             "operator_approved": True,
             "disposable_workspace": True,
+            "executable_sha256": hashlib.sha256(self.executable.read_bytes()).hexdigest(),
             "checker": {
                 "format": "cocotb-junit-v1",
                 "expected_tests": ["check_counter"],
@@ -174,6 +175,46 @@ class ApprovedJunitTests(unittest.IsolatedAsyncioTestCase):
             self.entry["checker"]["expected_tests"] = names
             self.save()
             self.assertEqual(list_approved_projects()["state"], "INVALID_CONFIGURATION")
+
+    async def test_executable_hash_must_match_before_process_spawn(self):
+        self.executable.write_bytes(b"tampered tool")
+        with patch("questa_mcp.approved.asyncio.create_subprocess_exec", new_callable=AsyncMock) as spawn:
+            got = await run_approved_project("smoke")
+            spawn.assert_not_called()
+        self.assertEqual(got["status"], "EXECUTABLE_HASH_MISMATCH")
+        self.assertFalse(got["eda_executed"])
+
+    async def test_checker_requires_pinned_executable_hash(self):
+        self.entry.pop("executable_sha256")
+        self.save()
+        with patch("questa_mcp.approved.asyncio.create_subprocess_exec", new_callable=AsyncMock) as spawn:
+            self.assertEqual(list_approved_projects()["state"], "INVALID_CONFIGURATION")
+            got = await run_approved_project("smoke")
+            self.assertEqual(got["status"], "INVALID_CONFIGURATION")
+            spawn.assert_not_called()
+
+    async def test_executable_modified_during_execution_never_passes(self):
+        async def spawn(*args, **kwargs):
+            Path(kwargs["env"]["COCOTB_RESULTS_FILE"]).write_bytes(junit())
+            self.executable.write_bytes(b"modified while running")
+            return FakeProcess()
+        with patch("questa_mcp.approved.asyncio.create_subprocess_exec", side_effect=spawn):
+            got = await run_approved_project("smoke")
+        self.assertEqual(got["status"], "EXECUTABLE_CHANGED")
+        self.assertEqual(got["test_verdict"], "UNKNOWN")
+        self.assertFalse(got["run_provenance"]["executable_unchanged"])
+
+    async def test_undecodable_transcript_never_passes(self):
+        got = await self.call(junit(), b"simulator \xff invalid utf8")
+        self.assertEqual(got["checker"]["state"], "PASSED")
+        self.assertEqual(got["test_verdict"], "UNKNOWN")
+        self.assertFalse(got["transcript_utf8_lossless"])
+
+    async def test_unparseable_long_transcript_line_never_passes(self):
+        got = await self.call(junit(), b"x" * 9000)
+        self.assertEqual(got["checker"]["state"], "PASSED")
+        self.assertEqual(got["test_verdict"], "UNKNOWN")
+        self.assertFalse(got["transcript_parser_complete"])
 
     async def test_report_path_unique_per_run(self):
         paths: list[str] = []
