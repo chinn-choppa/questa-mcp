@@ -1,0 +1,3 @@
+# ** Warning: (vlog-2240) demo.sv(5): Port mismatch
+# ** Error: C:/test/demo.vho(31): (vcom-1136) Unknown identifier
+# ** Note: (vcom-1001) Checked package

@@ -1,5 +1,7 @@
 # Контракт для агентов
 
+[English](AGENTS.en.md)
+
 Это самостоятельный публичный MCP-проект, а не копия `agent-dev-toolkit`.
 
 - Сначала прочитай `README.md`, `SECURITY.md` и `docs/TOOL_CONTRACT.md`; сверяй код с актуальным SDK MCP.

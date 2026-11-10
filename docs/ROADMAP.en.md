@@ -1,0 +1,20 @@
+# Roadmap
+
+[Русский](ROADMAP.md)
+
+## Completed foundations
+
+- [x] Public local stdio MCP server, read-only discovery and bounded diagnostic parsing.
+- [x] Real in-process and subprocess `tools/list`/`tools/call` CI tests on Windows/Linux, Python 3.11/3.13.
+- [x] Synthetic compilation, simulation failure, UVM and no-evidence cases.
+- [x] English and Russian main public documents.
+
+## Next steps
+
+- [ ] #3: validate parser against more public tool/version transcripts and assertion variants; add documented confidence limitations.
+- [ ] #4: opt-in allowlisted project runner, bounded subprocess and mock-process tests.
+- [ ] #5: distinct compilation, elaboration, simulation, checker and regression verdicts; seeds and artifact provenance.
+- [ ] #6: opt-in coverage/waveform manifests and external Wavepeek/wave-mcp handoff; no assumed native WLF support.
+- [ ] Real licensed Questa/ModelSim and Python 3.15 acceptance: **NOT_RUN** until evidenced.
+
+No stage should equate process exit 0 with self-checking test success.
