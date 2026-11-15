@@ -3,9 +3,9 @@
 [Русский](TESTING.md)
 
 ```bash
-uv sync
-uv run python -m unittest discover -s tests -v
-uv run python -m compileall -q src tests
+uv sync --locked
+uv run --locked pytest -q tests
+uv run --locked python -m compileall -q src tests
 ```
 
 CI on `ubuntu-latest` and `windows-latest`, Python 3.11 and 3.13, installs dependencies into a project-local uv environment. Tests include real in-process MCP `tools/list`, `tools/call`, subprocess stdio roundtrip, bad JSON-schema arguments, domain parsing and synthetic vendor transcript examples.

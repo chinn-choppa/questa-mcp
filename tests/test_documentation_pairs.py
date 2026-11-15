@@ -1,26 +1,23 @@
-"""Каждому основному публичному Markdown соответствует связанный перевод."""
-
-import unittest
+"""Основные документы обязаны иметь взаимные ссылки на переводы."""
 from pathlib import Path
 
-
-class DocumentationPairsTests(unittest.TestCase):
-    def test_all_public_root_and_docs_markdown_has_reciprocal_translation(self):
-        root = Path(__file__).resolve().parents[1]
-        source_paths = list(root.glob("*.md")) + list((root / "docs").glob("*.md"))
-        originals = [p for p in source_paths if not p.name.endswith(".en.md")]
-        self.assertTrue(originals)
-        for source in originals:
-            english = source.with_name(source.stem + ".en.md")
-            with self.subTest(document=str(source.relative_to(root))):
-                self.assertTrue(english.is_file(), "Нет перевода на английский")
-                self.assertIn(
-                    "(" + english.name + ")", source.read_text(encoding="utf-8")
-                )
-                self.assertIn(
-                    "(" + source.name + ")", english.read_text(encoding="utf-8")
-                )
+import pytest
 
 
-if __name__ == "__main__":
-    unittest.main()
+ROOT = Path(__file__).resolve().parents[1]
+DOCUMENTS = [
+    path for path in (list(ROOT.glob("*.md")) + list((ROOT / "docs").glob("*.md")))
+    if not path.name.endswith(".en.md")
+]
+
+
+def test_documentation_corpus_is_not_empty():
+    assert DOCUMENTS
+
+
+@pytest.mark.parametrize("source", DOCUMENTS, ids=lambda p: str(p.relative_to(ROOT)))
+def test_public_document_has_reciprocal_translation(source: Path):
+    english = source.with_name(source.stem + ".en.md")
+    assert english.is_file(), f"Нет перевода на английский: {source.name}"
+    assert f"({english.name})" in source.read_text(encoding="utf-8")
+    assert f"({source.name})" in english.read_text(encoding="utf-8")

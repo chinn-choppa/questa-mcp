@@ -14,9 +14,9 @@
 ## Локальная разработка
 
 ```bash
-uv sync
-uv run python -m unittest discover -s tests -v
-uv run python -m compileall -q src tests
+uv sync --locked
+uv run --locked pytest -q tests
+uv run --locked python -m compileall -q src tests
 ```
 
 Если доступ к PyPI ограничен, тесты доменной логики можно выполнять обычным `python`, установив `PYTHONPATH=src`. Конфигурацию настоящего MCP-клиента проверяйте отдельно, не называйте тестом соединения компиляцию Python-файлов.
@@ -38,4 +38,4 @@ uv run python -m compileall -q src tests
 
 Внося изменения, участник подтверждает право распространять их по Apache-2.0. Исключите из PR код и материалы с несовместимыми лицензиями. Вопросы безопасности — по [SECURITY.md](SECURITY.md), а не через публичные issues.
 
-Все основные файлы Markdown поддерживаются в парах `.md` и `.en.md`; при изменениях обновляйте обе версии и выполняйте `uv run python -m unittest discover -s tests -v`. Реальные MCP-вызовы в CI не являются запуском коммерческого EDA.
+Все основные файлы Markdown поддерживаются в парах `.md` и `.en.md`; при изменениях обновляйте обе версии и выполняйте `uv run --locked pytest -q tests`. Реальные MCP-вызовы в CI не являются запуском коммерческого EDA.

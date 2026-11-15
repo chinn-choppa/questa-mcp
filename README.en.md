@@ -13,8 +13,8 @@ Requires Python 3.11+ and [uv](https://docs.astral.sh/uv/). Tested in public CI 
 ```bash
 git clone https://github.com/chinn-choppa/questa-mcp.git
 cd questa-mcp
-uv sync
-uv run questa-mcp
+uv sync --locked
+uv run --locked questa-mcp
 ```
 
 For clients using an `mcpServers` entry (other hosts have different configuration formats):
@@ -45,9 +45,9 @@ Parsing accepts up to 1 MiB of text and returns at most 200 records. Entries inc
 ## Verification
 
 ```bash
-uv sync
-uv run python -m unittest discover -s tests -v
-uv run python -m compileall -q src tests
+uv sync --locked
+uv run --locked pytest -q tests
+uv run --locked python -m compileall -q src tests
 ```
 
 CI includes real in-process and subprocess `stdio` MCP `tools/list` and `tools/call`, invalid request tests, and synthetic transcripts. Commercial EDA verification is separate and **NOT_RUN**.

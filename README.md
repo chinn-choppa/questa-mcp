@@ -14,13 +14,13 @@
 
 ## Быстрый старт
 
-Нужен Python 3.11+ и установленный `uv`. Для самого MCP-сервера нужен совместимый MCP SDK v2.3.0; SDK будет установлен в локальное виртуальное окружение при выполнении `uv sync`.
+Нужен Python 3.11+ и установленный `uv`. Для самого MCP-сервера нужен совместимый MCP SDK v2.3.0; SDK будет установлен в локальное виртуальное окружение при выполнении `uv sync --locked`.
 
 ```bash
 git clone https://github.com/chinn-choppa/questa-mcp.git
 cd questa-mcp
-uv sync
-uv run questa-mcp
+uv sync --locked
+uv run --locked questa-mcp
 ```
 
 Локальная конфигурация клиента MCP (пример структуры; конкретный путь к `uv`/проекту и формат конфигурации зависят от клиента):
@@ -51,11 +51,11 @@ uv run questa-mcp
 ## Воспроизводимые проверки
 
 ```bash
-python -m unittest discover -s tests -v
+uv run --locked pytest -q tests
 python -m compileall -q src tests
 ```
 
-CI выполняет реальные `tools/list` и `tools/call` через `stdio` на Windows/Linux с Python 3.11/3.13 и MCP SDK 2.3.0. Реальный EDA остаётся `NOT_RUN`. Python 3.15 — `NOT_RUN`.\n\nПосле `uv sync` проверьте запуск `uv run questa-mcp` с MCP Inspector или настоящим MCP-клиентом. Одна лишь установка или `tools/list` **не доказывает** успешное выполнение EDA-команды. До появления соответствующих реализаций состояние таких проверок — `NOT_RUN`.
+CI выполняет реальные `tools/list` и `tools/call` через `stdio` на Windows/Linux с Python 3.11/3.13 и MCP SDK 2.3.0. Реальный EDA остаётся `NOT_RUN`. Python 3.15 — `NOT_RUN`.\n\nПосле `uv sync --locked` проверьте запуск `uv run --locked questa-mcp` с MCP Inspector или настоящим MCP-клиентом. Одна лишь установка или `tools/list` **не доказывает** успешное выполнение EDA-команды. До появления соответствующих реализаций состояние таких проверок — `NOT_RUN`.
 
 ## Ограничения
 

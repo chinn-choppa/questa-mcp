@@ -5,24 +5,22 @@
 ## Быстрые проверки без EDA и внешней сети
 
 ```bash
-PYTHONPATH=src python -m unittest discover -s tests -v
+uv run --locked pytest -q tests
 python -m compileall -q src tests
 ```
 
 PowerShell:
 
 ```powershell
-$env:PYTHONPATH = "src"
-python -m unittest discover -s tests -v
+uv run --locked pytest -q tests
 python -m compileall -q src tests
-Remove-Item Env:PYTHONPATH
 ```
 
 ## При наличии SDK MCP
 
 ```bash
-uv sync
-uv run questa-mcp
+uv sync --locked
+uv run --locked questa-mcp
 ```
 
 Подключить MCP Inspector либо клиент Codex/Claude/OpenCode, проверить реальный `tools/list`, затем вызвать `server_info` и `parse_diagnostics` на синтетических данных. Только после успешного фактического вызова инструмента можно фиксировать `MCP_TOOL_PASS`. Простой старт процесса или наличие пакета означает максимум `INSTALLED`.

@@ -7,9 +7,9 @@ Contributions from FPGA/ASIC verification engineers are welcome. Check existing 
 ## Build and checks
 
 ```bash
-uv sync
-uv run python -m unittest discover -s tests -v
-uv run python -m compileall -q src tests
+uv sync --locked
+uv run --locked pytest -q tests
+uv run --locked python -m compileall -q src tests
 ```
 
 Real MCP contract tests connect through both in-memory and subprocess stdio transports. They are **not** evidence of licensed Questa execution. Public CI needs no Siemens installation or license.

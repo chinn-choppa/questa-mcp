@@ -1,9 +1,8 @@
-"""Контрактные тесты настоящего MCP-клиента: in-process и stdio."""
-
+"""Реальный MCP-клиент (in-process и stdio) на нативном pytest."""
 from __future__ import annotations
 
+import asyncio
 import sys
-import unittest
 from pathlib import Path
 
 from mcp import Client, StdioServerParameters
@@ -11,28 +10,30 @@ from mcp import Client, StdioServerParameters
 from questa_mcp.server import create_server
 
 
-class MCPContractTests(unittest.IsolatedAsyncioTestCase):
-    async def test_in_process_real_calls(self):
+def test_in_process_real_calls():
+    async def scenario():
         async with Client(create_server()) as client:
             listed = await client.list_tools()
-            names = {item.name for item in listed.tools}
-            self.assertEqual(names, {"server_info", "tool_status", "parse_diagnostics"})
+            assert {item.name for item in listed.tools} == {
+                "server_info", "tool_status", "parse_diagnostics"}
             info = await client.call_tool("server_info", {})
-            self.assertFalse(info.is_error)
-            self.assertFalse(info.structured_content["eda_execution_supported"])
+            assert info.is_error is False
+            assert info.structured_content["eda_execution_supported"] is False
             parsed = await client.call_tool("parse_diagnostics", {
                 "text": "** Fatal: (vsim-3825) tb.sv(17): assertion failure",
                 "tool": "vsim",
             })
-            self.assertFalse(parsed.is_error)
-            self.assertEqual(parsed.structured_content["test_verdict"], "FAIL")
-            self.assertEqual(parsed.structured_content["items"][0]["line"], 17)
-            rejected = await client.call_tool("parse_diagnostics", {
-                "text": "none", "limit": 0,
-            })
-            self.assertTrue(rejected.is_error)
+            assert parsed.is_error is False
+            assert parsed.structured_content["test_verdict"] == "FAIL"
+            assert parsed.structured_content["items"][0]["line"] == 17
+            rejected = await client.call_tool("parse_diagnostics", {"text": "none", "limit": 0})
+            assert rejected.is_error is True
 
-    async def test_stdio_real_calls(self):
+    asyncio.run(scenario())
+
+
+def test_stdio_real_calls():
+    async def scenario():
         root = Path(__file__).resolve().parents[1]
         params = StdioServerParameters(
             command=sys.executable,
@@ -41,15 +42,17 @@ class MCPContractTests(unittest.IsolatedAsyncioTestCase):
         )
         async with Client(params) as client:
             listed = await client.list_tools()
-            self.assertIn("parse_diagnostics", {item.name for item in listed.tools})
+            assert "parse_diagnostics" in {item.name for item in listed.tools}
             parsed = await client.call_tool("parse_diagnostics", {
                 "text": "# ** Warning: (vlog-2240) a.sv(5): connection mismatch",
                 "tool": "vlog",
             })
-            self.assertFalse(parsed.is_error)
-            self.assertEqual(parsed.structured_content["items"][0]["code"], "vlog-2240")
-            self.assertEqual(parsed.structured_content["test_verdict"], "UNKNOWN")
+            assert parsed.is_error is False
+            assert parsed.structured_content["items"][0]["code"] == "vlog-2240"
+            assert parsed.structured_content["test_verdict"] == "UNKNOWN"
             rejected = await client.call_tool("parse_diagnostics", {
                 "text": "x", "tool": "bash",
             })
-            self.assertTrue(rejected.is_error)
+            assert rejected.is_error is True
+
+    asyncio.run(scenario())
