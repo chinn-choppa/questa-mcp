@@ -1,12 +1,12 @@
-"""Офлайн-контракты разбора диагностик Verilator, без EDA."""
+"""Офлайн-контракты разбора диагностик Questa, без EDA."""
 import pytest
 
 from questa_mcp.diagnostics import parse_diagnostics_text
 
 
 def test_realistic_log():
-    text = ("%Warning-WIDTH: rtl/top.sv:12:4: Operator ADD expects 8 bits\n"
-            "%Error-UNSUPPORTED: rtl/top.sv:22:2: Unsupported construct")
+    text = ("** Error: (vsim-3601) Iteration limit reached\n"
+            "** Warning: (vlog-2240) Port connection mismatch")
     result = parse_diagnostics_text(text, "vsim")
     assert result["count"] == 2
     assert [item["severity"] for item in result["items"]] == ["error", "warning"]
