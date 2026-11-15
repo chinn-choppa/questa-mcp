@@ -1,0 +1,2 @@
+# ** Fatal: (vsim-PLI-3071) tb.sv(77): assertion violated Time: 100 ns Iteration: 0 Instance: /tb
+# UVM_ERROR @ 125 ns: uvm_test_top.env [SCOREBOARD] unexpected transaction

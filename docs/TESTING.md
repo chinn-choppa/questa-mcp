@@ -1,17 +1,19 @@
 # Проверка проекта
 
+[English](TESTING.en.md)
+
 ## Быстрые проверки без EDA и внешней сети
 
 ```bash
 uv run --locked pytest -q tests
-uv run --locked python -m compileall -q src tests
+python -m compileall -q src tests
 ```
 
 PowerShell:
 
 ```powershell
 uv run --locked pytest -q tests
-uv run --locked python -m compileall -q src tests
+python -m compileall -q src tests
 ```
 
 ## При наличии SDK MCP
@@ -27,9 +29,6 @@ uv run --locked questa-mcp
 
 **Пока не предусмотрено** в bootstrap. После появления команд выполняйте на публичных минимальных RTL-проектах: lint, негативный кейс, сбой лицензии/тайм-аут, успешное завершение по самопроверяющемуся тесту, повреждённый файл, неверный путь и ограничение каталогов. Записывайте версии и SHA используемых исходников.
 
-## Pytest и закреплённые зависимости
+## Выполненная приёмка #2/#3
 
-Тестовый контракт — `uv sync --locked` и `uv run --locked pytest -q tests`.
-Все текущие базовые unit-тесты — нативные pytest (`assert`, `raises`, `monkeypatch`, `tmp_path`, `parametrize`).
-Проверка конструктора SDK не пропускается при его отсутствии; отсутствие зависимости — ошибка CI.
-Реальная Questa/лицензия и команды из будущих PR проверяются отдельно.
+CI запускает настоящий клиент MCP через `stdio` и внутри процесса, проверяет `tools/list`, `tools/call` и отклонение некорректной схемы. Первый успешный запуск: [GitHub Actions 42054703978](https://github.com/chinn-choppa/questa-mcp/actions/runs/42054703978): Linux/Windows с Python 3.11 и 3.13, 4/4. SDK: `mcp==2.3.0`. Запуск Siemens Questa, лицензии, настоящая RTL-верификация, Python 3.15: **NOT_RUN**.
