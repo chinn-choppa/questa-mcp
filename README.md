@@ -19,8 +19,8 @@
 ```bash
 git clone https://github.com/chinn-choppa/questa-mcp.git
 cd questa-mcp
-uv sync
-uv run questa-mcp
+uv sync --locked
+uv run --locked questa-mcp
 ```
 
 Локальная конфигурация клиента MCP (пример структуры; конкретный путь к `uv`/проекту и формат конфигурации зависят от клиента):
@@ -51,8 +51,8 @@ uv run questa-mcp
 ## Воспроизводимые проверки
 
 ```bash
-python -m unittest discover -s tests -v
-python -m compileall -q src tests
+uv run --locked pytest -q tests
+uv run --locked python -m compileall -q src tests
 ```
 
 После `uv sync` проверьте запуск `uv run questa-mcp` с MCP Inspector или настоящим MCP-клиентом. Одна лишь установка или `tools/list` **не доказывает** успешное выполнение EDA-команды. До появления соответствующих реализаций состояние таких проверок — `NOT_RUN`.
